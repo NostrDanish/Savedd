@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="public/brand/logo.svg" alt="SAVEDD — Search with faith. Discover with purpose." width="480">
+  <img src="public/brand/logo.svg" alt="SAVEDD — Seek, and ye shall find." width="480">
 </p>
 
 # SAVEDD
 
-**Search with faith. Discover with purpose.**
+**Seek, and ye shall find.**
 
-SAVEDD is a **Christian community search engine** — the first proof that the Dsearch / SIP-01 stack can power independently branded community engines without duplicating the search infrastructure.
+SAVEDD searches Scripture, the Church, and the open web — the first proof that the Dsearch / SIP-01 stack can power independently branded community engines without duplicating the search infrastructure.
 
 **Target:** [savedd.com](https://savedd.com)
 

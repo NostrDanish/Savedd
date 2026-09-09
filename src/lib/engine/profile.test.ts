@@ -39,6 +39,7 @@ describe('community engine profile', () => {
     expect(ENGINE_PROFILE.branding.siteUrl).toBe('https://savedd.com');
     expect(ENGINE_PROFILE.branding.domain).toBe('savedd.com');
     expect(ENGINE_PROFILE.branding.name).toBe('SAVEDD');
+    expect(ENGINE_PROFILE.branding.slogan).toBe('Seek, and ye shall find.');
     expect(ENGINE_PROFILE.branding.ogImage.startsWith('https://')).toBe(true);
   });
 

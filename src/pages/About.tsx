@@ -21,21 +21,23 @@ export default function About() {
       <div className="container max-w-2xl py-12">
         <div className="flex items-center gap-3 mb-3">
           <LogoMark className="w-10 h-10" />
-          <h1 className="text-3xl font-serif font-semibold tracking-tight">About {engine.branding.name}</h1>
+          <h1 className="text-3xl font-display font-semibold tracking-tight">About {engine.branding.name}</h1>
         </div>
-        <p className="text-muted-foreground mb-8 leading-relaxed">
+        <p className="font-display italic text-xl text-primary mb-1 leading-relaxed">
           {engine.branding.slogan}
+        </p>
+        <p className="text-[11px] uppercase tracking-[0.28em] text-muted-foreground mb-8">
+          Matthew 7:7
         </p>
 
         <Separator className="mb-8" />
 
         <section className="mb-10">
-          <h2 className="text-xl font-serif font-semibold mb-3">What SAVEDD is</h2>
+          <h2 className="text-xl font-display font-semibold mb-3">What SAVEDD is</h2>
           <p className="text-muted-foreground leading-relaxed mb-4">
-            SAVEDD is a Christian community search engine. It is built for people who want to
-            search the open web — sermons, Scripture study, church history, news, and ordinary
-            questions — without pretending that a search box is a pastor, a denomination, or a
-            source of revelation.
+            SAVEDD is search for people of the Word. It is built for sermons, Scripture study,
+            church history, news, and ordinary questions — without pretending that a search box
+            is a pastor, a denomination, or a source of revelation.
           </p>
           <p className="text-muted-foreground leading-relaxed">
             It exists because communities should be able to run their own search engines on
@@ -83,7 +85,7 @@ export default function About() {
         </div>
 
         <section className="mb-10">
-          <h2 className="text-xl font-serif font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-display font-semibold mb-3 flex items-center gap-2">
             <Scale className="w-5 h-5 text-primary" />
             Scripture and interpretation
           </h2>
@@ -105,7 +107,7 @@ export default function About() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-xl font-serif font-semibold mb-3 flex items-center gap-2">
+          <h2 className="text-xl font-display font-semibold mb-3 flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             Truthful sourcing
           </h2>
@@ -117,7 +119,7 @@ export default function About() {
         </section>
 
         <section className="mb-4">
-          <h2 className="text-xl font-serif font-semibold mb-3">Open search infrastructure</h2>
+          <h2 className="text-xl font-display font-semibold mb-3">Open search infrastructure</h2>
           <p className="text-muted-foreground leading-relaxed mb-3">
             Underneath the SAVEDD interface is an open search stack: a shared SIP-01
             document index, community crawlers and indexers, and a structured query engine.

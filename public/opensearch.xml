@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
   <ShortName>SAVEDD</ShortName>
-  <Description>SAVEDD — a Christian community search engine.</Description>
+  <Description>SAVEDD — Seek, and ye shall find.</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="16" height="16" type="image/svg+xml">https://savedd.com/favicon.svg</Image>
   <Url type="text/html" method="get" template="https://savedd.com/?q={searchTerms}"/>

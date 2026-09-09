@@ -135,12 +135,12 @@ export const SAVEDD_PROFILE: CommunityEngineProfile = {
     shortName: 'SAVEDD',
     domain: 'savedd.com',
     siteUrl: 'https://savedd.com',
-    slogan: 'Search with faith. Discover with purpose.',
+    slogan: 'Seek, and ye shall find.',
     description:
-      'SAVEDD is a Christian community search engine. Search the open web and a shared decentralized index, with optional AI answers grounded in sources — not in invented authority.',
+      'SAVEDD searches Scripture, the Church, and the open web. Optional AI answers are grounded in sources — never invented, never claimed as revelation.',
     ogImage: 'https://savedd.com/og.jpg',
     defaultTheme: 'light',
-    searchPlaceholder: 'Search Scripture, the church, and the web…',
+    searchPlaceholder: 'Ask of the Word, the Church, and the world…',
     wordmark: 'SAVEDD',
   },
   search: {
@@ -187,7 +187,7 @@ export const SAVEDD_PROFILE: CommunityEngineProfile = {
       { to: '/settings', label: 'Settings' },
       { to: '/policy', label: 'Content Policy' },
     ],
-    footerTagline: 'A Christian community search engine.',
+    footerTagline: 'Matthew 7:7',
   },
   ai: {
     enabledDefault: true,

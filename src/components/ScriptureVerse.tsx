@@ -16,15 +16,16 @@ export function ScriptureVerse({ className, date }: ScriptureVerseProps) {
 
   return (
     <figure
-      className={cn('max-w-xl mx-auto text-center px-2', className)}
+      className={cn('max-w-xl mx-auto text-center px-3', className)}
       aria-label={`Scripture: ${verse.reference}, ${verse.translation}`}
     >
-      <blockquote className="text-sm sm:text-[15px] leading-relaxed text-muted-foreground font-serif italic">
+      <div className="mx-auto mb-3 h-px w-16 bg-primary/30" aria-hidden="true" />
+      <blockquote className="font-display italic text-[15px] sm:text-base leading-relaxed text-foreground/80">
         <p>&ldquo;{verse.text}&rdquo;</p>
       </blockquote>
-      <figcaption className="mt-2 text-xs tracking-wide text-muted-foreground/80">
-        <cite className="not-italic font-medium text-foreground/70">{verse.reference}</cite>
-        <span className="mx-1.5 text-border" aria-hidden="true">·</span>
+      <figcaption className="mt-3 text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+        <cite className="not-italic text-foreground/70">{verse.reference}</cite>
+        <span className="mx-2 text-primary/50" aria-hidden="true">·</span>
         <span>{verse.translation}</span>
       </figcaption>
     </figure>

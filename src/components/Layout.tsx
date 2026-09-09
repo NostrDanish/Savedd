@@ -45,7 +45,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
         <div className="container flex items-center justify-between h-14 gap-4">
           <Link to="/" className="flex items-center gap-2.5 shrink-0 group" aria-label={`${engine.branding.name} home`}>
             <LogoMark className="w-8 h-8 rounded-lg group-hover:scale-105 transition-transform" />
-            <span className="font-semibold text-lg tracking-[0.18em] font-serif">
+            <span className="font-display font-semibold text-xl tracking-[0.2em]">
               {engine.branding.wordmark}
             </span>
           </Link>
@@ -116,7 +116,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">
                     <LogoMark className="w-6 h-6 rounded-md" />
-                    <span className="font-serif tracking-[0.16em]">{engine.branding.wordmark}</span>
+                    <span className="font-display tracking-[0.18em]">{engine.branding.wordmark}</span>
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 px-4 pb-6" aria-label="Mobile">
@@ -148,7 +148,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
       <footer className="border-t border-border/50 py-6">
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 text-center sm:text-left">
-            <span className="font-semibold font-serif tracking-[0.14em] text-foreground/80">{engine.branding.wordmark}</span>
+            <span className="font-display font-semibold tracking-[0.16em] text-foreground/80">{engine.branding.wordmark}</span>
             <span className="text-border">|</span>
             <span>{engine.ui.footerTagline}</span>
           </div>

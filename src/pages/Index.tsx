@@ -185,14 +185,20 @@ const Index = () => {
       <Layout minimal>
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-16">
           <div className="text-center mb-10 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700">
-            <div className="flex items-center justify-center mb-6">
-              <LogoMark className="w-16 h-16 rounded-2xl" />
+            <div className="flex items-center justify-center mb-7">
+              <div className="relative isolate flex items-center justify-center w-20 h-20 rounded-full border border-primary/25 bg-card/70 shadow-sm">
+                <div className="absolute inset-[-18%] -z-10 rounded-full bg-primary/10 blur-2xl motion-reduce:hidden" />
+                <LogoMark className="w-12 h-12" />
+              </div>
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-semibold tracking-[0.18em] mb-4 text-foreground">
+            <h1 className="font-display text-5xl sm:text-6xl md:text-7xl font-semibold tracking-[0.22em] mb-3 text-foreground">
               {ENGINE_PROFILE.branding.wordmark}
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            <p className="font-display italic text-xl sm:text-2xl text-primary max-w-lg mx-auto leading-snug">
               {ENGINE_PROFILE.branding.slogan}
+            </p>
+            <p className="mt-2 text-[11px] uppercase tracking-[0.28em] text-muted-foreground/80">
+              Matthew 7:7
             </p>
           </div>
 

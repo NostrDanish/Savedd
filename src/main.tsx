@@ -28,6 +28,7 @@ import './index.css';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';
 import '@fontsource-variable/source-serif-4';
+import '@fontsource-variable/cormorant';
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>

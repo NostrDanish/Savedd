@@ -44,10 +44,10 @@ export function SearchBar({
     <form
       onSubmit={handleSubmit}
       className={cn(
-        'relative flex items-center w-full rounded-xl border bg-card transition-all duration-200 overflow-hidden',
-        focused && 'border-primary/50 glow-primary',
-        !focused && 'border-border hover:border-border/80',
-        size === 'large' && 'rounded-2xl',
+        'relative flex items-center w-full rounded-none border bg-card/90 transition-all duration-200 overflow-hidden',
+        focused && 'border-primary/60 shadow-[0_0_0_3px] shadow-primary/10',
+        !focused && 'border-border hover:border-primary/35',
+        size === 'large' && 'rounded-none',
         className,
       )}
     >
