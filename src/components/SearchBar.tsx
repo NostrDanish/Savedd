@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
@@ -68,7 +69,7 @@ export function SearchBar({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="Search Nostr & the web…"
+        placeholder={ENGINE_PROFILE.branding.searchPlaceholder}
         autoFocus={autoFocus}
         autoComplete="off"
         className={cn(

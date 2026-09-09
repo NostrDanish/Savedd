@@ -13,8 +13,8 @@ import { useState } from 'react';
 
 export default function Policy() {
   useSeoMeta({
-    title: 'Content Policy - Dsearch',
-    description: 'Content policy and moderation practices for the Dsearch federated search engine. Modeled on the Ahmia approach to responsible dark-web indexing.',
+    title: 'Content Policy - SAVEDD',
+    description: 'Content policy and moderation practices for SAVEDD. Modeled on the Ahmia approach to responsible indexing.',
   });
 
   return (

@@ -13,8 +13,8 @@ import { NostrLoginProvider } from '@nostrify/react/login';
 import { AppProvider } from '@/components/AppProvider';
 import { AppConfig } from '@/contexts/AppContext';
 import { APP_RELAYS } from '@/lib/appRelays';
-import { DEFAULT_TAB_CONFIG } from '@/components/SourceTabs';
 import { getBrowserLanguage } from '@/lib/languageFilter';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import AppRouter from './AppRouter';
 
 const head = createHead({
@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 });
 
 const defaultConfig: AppConfig = {
-  theme: "dark",
+  theme: ENGINE_PROFILE.branding.defaultTheme,
   relayMetadata: APP_RELAYS,
   blossomServerMetadata: {
     servers: [
@@ -47,18 +47,12 @@ const defaultConfig: AppConfig = {
   useAppBlossomServers: true,
   privacyMode: false,
   autoIndex: true,
-  tabConfig: DEFAULT_TAB_CONFIG,
+  tabConfig: ENGINE_PROFILE.ui.tabConfig,
   voteWithIdentity: false,
-  // Engines off by default (speed + principle of least surprise):
-  //   brave         — BYOK; dormant until the user adds their own key anyway
-  //   parallel      — BYOK; dormant until the user adds their own key anyway
-  //   cached-index  — legacy kind 30078 cache (frozen/read-only; SIP-01 wins)
-  //   wikipedia     — Wiki tab engine (tab hidden by default too)
-  //   tor           — .onion search (Tor tab hidden by default)
-  //   stackoverflow — Code tab engine (tab hidden by default too)
-  // The SIP-01 web index, SearXNG, DuckDuckGo, Nostr, stakes, and community
-  // stay on. Users re-enable anything in Settings → Engines.
-  disabledProviders: ['brave', 'parallel', 'cached-index', 'wikipedia', 'tor', 'stackoverflow'],
+  // Community-engine defaults: SIP-01 + Brave + DuckDuckGo + SearXNG on.
+  // Everything else stays in the architecture; users can re-enable it in
+  // Settings → Engines. See ENGINE_PROFILE.search.disabledProviders.
+  disabledProviders: ENGINE_PROFILE.search.disabledProviders,
   // Language filter defaults to the browser's primary language (English
   // when it can't be detected). Only applies while the user has never
   // touched the filter — a stored choice, including a cleared one, wins.
@@ -68,7 +62,7 @@ const defaultConfig: AppConfig = {
 export function App() {
   return (
     <UnheadProvider head={head}>
-      <AppProvider storageKey="nostr:app-config" defaultConfig={defaultConfig}>
+      <AppProvider storageKey="savedd:app-config" defaultConfig={defaultConfig}>
         <QueryClientProvider client={queryClient}>
           <NostrLoginProvider storageKey='nostr:login'>
             <NostrProvider>

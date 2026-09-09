@@ -50,7 +50,7 @@ describe('resolveAIConfig precedence', () => {
     const r = resolveAIConfig({ ...DEFAULT_AI_CONFIG, apiKey: '' }, ENGINE_ON);
     expect(r.tier).toBe('engine');
     expect(r.endpoint).toBe(ENGINE_AI_BASE); // same-origin /api/ai
-    expect(r.model).toBe('qwen/qwen-2.5-7b-instruct');
+    expect(r.model).toBe(ENGINE_ON.model);
     expect(r.engine?.providerName).toBe('PPQ.ai');
   });
 

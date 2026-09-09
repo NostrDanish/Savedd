@@ -5,6 +5,7 @@
 
 @theme inline {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 
   --color-background: var(--background);
@@ -98,53 +99,53 @@
   }
 }
 
-/* ─── Light theme (Dsearch-branded) ─── */
+/* ─── Light theme (SAVEDD — warm navy & antique gold) ─── */
 :root {
   --radius: 0.75rem;
 
-  --background: hsl(210 40% 98%);
-  --foreground: hsl(222 47% 11%);
+  --background: hsl(36 40% 97%);
+  --foreground: hsl(222 40% 14%);
 
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222 47% 11%);
+  --card: hsl(40 50% 99%);
+  --card-foreground: hsl(222 40% 14%);
 
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222 47% 11%);
+  --popover: hsl(40 50% 99%);
+  --popover-foreground: hsl(222 40% 14%);
 
-  /* Dsearch signal amber, deepened for AA contrast on white */
-  --primary: hsl(28 92% 36%);
-  --primary-foreground: hsl(0 0% 100%);
+  /* Antique gold, deepened for AA contrast on cream */
+  --primary: hsl(38 48% 34%);
+  --primary-foreground: hsl(40 50% 98%);
 
-  --secondary: hsl(36 30% 94%);
-  --secondary-foreground: hsl(222 47% 11%);
+  --secondary: hsl(36 28% 93%);
+  --secondary-foreground: hsl(222 40% 14%);
 
-  --muted: hsl(36 20% 94%);
-  --muted-foreground: hsl(217 15% 42%);
+  --muted: hsl(36 22% 93%);
+  --muted-foreground: hsl(222 16% 38%);
 
-  --accent: hsl(38 55% 92%);
-  --accent-foreground: hsl(222 47% 11%);
+  --accent: hsl(38 40% 91%);
+  --accent-foreground: hsl(222 40% 14%);
 
   --destructive: hsl(0 74% 51%);
   --destructive-foreground: hsl(0 0% 100%);
 
-  --border: hsl(30 20% 88%);
-  --input: hsl(30 20% 88%);
-  --ring: hsl(28 92% 36%);
+  --border: hsl(34 22% 84%);
+  --input: hsl(34 22% 84%);
+  --ring: hsl(38 48% 34%);
 
-  --chart-1: hsl(28 92% 36%);
-  --chart-2: hsl(190 80% 38%);
-  --chart-3: hsl(197 37% 24%);
+  --chart-1: hsl(38 48% 34%);
+  --chart-2: hsl(222 40% 28%);
+  --chart-3: hsl(28 55% 42%);
   --chart-4: hsl(43 74% 56%);
-  --chart-5: hsl(340 70% 55%);
+  --chart-5: hsl(340 50% 48%);
 
-  --sidebar: hsl(36 30% 97%);
+  --sidebar: hsl(36 30% 96%);
   --sidebar-foreground: hsl(222 30% 20%);
-  --sidebar-primary: hsl(28 92% 36%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(36 30% 94%);
+  --sidebar-primary: hsl(38 48% 34%);
+  --sidebar-primary-foreground: hsl(40 50% 98%);
+  --sidebar-accent: hsl(36 28% 93%);
   --sidebar-accent-foreground: hsl(222 30% 10%);
-  --sidebar-border: hsl(30 20% 88%);
-  --sidebar-ring: hsl(28 92% 36%);
+  --sidebar-border: hsl(34 22% 84%);
+  --sidebar-ring: hsl(38 48% 34%);
 
   /* Source colors */
   --nostr: hsl(263 70% 50%);
@@ -157,50 +158,50 @@
   --i2p-foreground: hsl(0 0% 100%);
 }
 
-/* ─── Dark theme (Dsearch night grid — the brand dark) ─── */
+/* ─── Dark theme (SAVEDD night — deep navy, warm gold) ─── */
 .dark {
-  --background: hsl(222 47% 6%);
-  --foreground: hsl(214 40% 96%);
+  --background: hsl(222 42% 8%);
+  --foreground: hsl(36 30% 94%);
 
-  --card: hsl(221 44% 9%);
-  --card-foreground: hsl(214 40% 96%);
+  --card: hsl(222 38% 11%);
+  --card-foreground: hsl(36 30% 94%);
 
-  --popover: hsl(221 44% 9%);
-  --popover-foreground: hsl(214 40% 96%);
+  --popover: hsl(222 38% 11%);
+  --popover-foreground: hsl(36 30% 94%);
 
-  --primary: hsl(38 92% 60%);
-  --primary-foreground: hsl(24 50% 8%);
+  --primary: hsl(38 58% 62%);
+  --primary-foreground: hsl(222 42% 10%);
 
-  --secondary: hsl(220 35% 14%);
-  --secondary-foreground: hsl(214 40% 96%);
+  --secondary: hsl(222 30% 16%);
+  --secondary-foreground: hsl(36 30% 94%);
 
-  --muted: hsl(220 35% 14%);
-  --muted-foreground: hsl(217 25% 62%);
+  --muted: hsl(222 28% 16%);
+  --muted-foreground: hsl(36 12% 68%);
 
-  --accent: hsl(220 35% 14%);
-  --accent-foreground: hsl(214 40% 96%);
+  --accent: hsl(222 28% 16%);
+  --accent-foreground: hsl(36 30% 94%);
 
   --destructive: hsl(0 63% 45%);
-  --destructive-foreground: hsl(214 40% 96%);
+  --destructive-foreground: hsl(36 30% 94%);
 
-  --border: hsl(220 30% 17%);
-  --input: hsl(220 30% 17%);
-  --ring: hsl(38 92% 60%);
+  --border: hsl(222 24% 18%);
+  --input: hsl(222 24% 18%);
+  --ring: hsl(38 58% 62%);
 
-  --chart-1: hsl(38 92% 60%);
-  --chart-2: hsl(190 90% 50%);
-  --chart-3: hsl(263 70% 62%);
+  --chart-1: hsl(38 58% 62%);
+  --chart-2: hsl(36 30% 80%);
+  --chart-3: hsl(222 40% 55%);
   --chart-4: hsl(43 74% 60%);
-  --chart-5: hsl(340 75% 58%);
+  --chart-5: hsl(340 50% 58%);
 
-  --sidebar: hsl(222 47% 7%);
-  --sidebar-foreground: hsl(214 40% 96%);
-  --sidebar-primary: hsl(38 92% 60%);
-  --sidebar-primary-foreground: hsl(24 50% 8%);
-  --sidebar-accent: hsl(220 35% 13%);
-  --sidebar-accent-foreground: hsl(214 40% 96%);
-  --sidebar-border: hsl(220 30% 15%);
-  --sidebar-ring: hsl(38 92% 60%);
+  --sidebar: hsl(222 42% 9%);
+  --sidebar-foreground: hsl(36 30% 94%);
+  --sidebar-primary: hsl(38 58% 62%);
+  --sidebar-primary-foreground: hsl(222 42% 10%);
+  --sidebar-accent: hsl(222 28% 15%);
+  --sidebar-accent-foreground: hsl(36 30% 94%);
+  --sidebar-border: hsl(222 24% 16%);
+  --sidebar-ring: hsl(38 58% 62%);
 
   /* Source colors */
   --nostr: hsl(263 70% 66%);
@@ -213,13 +214,17 @@
   --i2p-foreground: hsl(0 0% 100%);
 }
 
-/* ─── Dark theme extras (the Dsearch brand layer) ─── */
-/* The dark theme IS the Dsearch theme: night-grid palette + accent horizon glow.
-   All glows derive from --primary via color-mix so the accent picker flows through. */
+/* Dark theme extras: warm gold horizon, no purple Dsearch glow. */
 .dark body {
   background-image:
-    radial-gradient(ellipse 90% 55% at 50% -15%, color-mix(in srgb, var(--primary) 12%, transparent), transparent),
-    radial-gradient(ellipse 60% 40% at 85% 110%, hsl(263 70% 55% / 0.06), transparent);
+    radial-gradient(ellipse 90% 55% at 50% -15%, color-mix(in srgb, var(--primary) 14%, transparent), transparent),
+    radial-gradient(ellipse 50% 35% at 90% 110%, hsl(222 50% 20% / 0.4), transparent);
+  background-attachment: fixed;
+}
+
+:root body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--primary) 8%, transparent), transparent);
   background-attachment: fixed;
 }
 

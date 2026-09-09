@@ -5,7 +5,8 @@
  * /api/ai/* — same origin, so no CORS and no key ever reaches a browser.
  *
  * Operator setup (engine-provided AI):
- *   1. wrangler secret put AI_API_KEY          ← your provider key (never committed)
+ *   1. wrangler secret put AI_API_KEY          ← OpenAI (or compatible) key
+ *   1b. wrangler secret put BRAVE_API_KEY      ← Brave Search token (never committed)
  *   2. Set the non-secret vars below (OWNER_PUBKEY enables the Admin → AI tab)
  *   3. wrangler deploy
  *
@@ -17,7 +18,7 @@
  * reports "not configured" and users simply add their own key.
  */
 {
-  "name": "dsearch",
+  "name": "savedd",
   "main": "worker.ts",
   "compatibility_date": "2026-08-01",
   "assets": {
@@ -29,10 +30,10 @@
     // Not a secret. Replace with YOUR pubkey when forking.
     "OWNER_PUBKEY": "c45041618951bb6012ac23f5cdf3d740465f2d640be841fd9bb1d0733370cd3c",
     // Non-secret provider defaults (override per deployment):
-    // "AI_PROVIDER_ENDPOINT": "https://api.ppq.ai/v1",
-    // "AI_MODEL": "qwen/qwen-2.5-7b-instruct",
-    // "AI_PROVIDER_NAME": "PPQ.ai",
-    // "AI_ENGINE_ENABLED": "true"
+    "AI_PROVIDER_ENDPOINT": "https://api.openai.com/v1",
+    "AI_MODEL": "gpt-4o-mini",
+    "AI_PROVIDER_NAME": "OpenAI",
+    "AI_ENGINE_ENABLED": "true"
   }
   // "kv_namespaces": [
   //   { "binding": "AI_CONFIG_KV", "id": "<paste-id-from-wrangler-kv-namespace-create>" }

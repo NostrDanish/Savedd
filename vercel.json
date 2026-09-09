@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
-    { "source": "/((?!assets/|api/|favicon\\.svg|og\\.jpg|manifest\\.webmanifest|opensearch\\.xml|robots\\.txt|.*\\.(?:js|css|png|jpg|jpeg|webp|svg|ico|woff2?|map)).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|api/|favicon\\.svg|og\\.jpg|manifest\\.webmanifest|opensearch\\.xml|robots\\.txt|sitemap\\.xml|.*\\.(?:js|css|png|jpg|jpeg|webp|svg|ico|woff2?|map)).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

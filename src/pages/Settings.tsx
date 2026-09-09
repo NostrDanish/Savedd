@@ -83,7 +83,7 @@ function AppearanceSection() {
   return (
     <section className="mb-10">
       <h2 className="text-sm font-semibold mb-1">Appearance</h2>
-      <p className="text-xs text-muted-foreground mb-4">Choose how Dsearch looks.</p>
+      <p className="text-xs text-muted-foreground mb-4">Choose how SAVEDD looks.</p>
       <div className="grid grid-cols-2 gap-2">
         {THEMES.map((t) => {
           const active = theme === t.value;
@@ -2129,8 +2129,8 @@ function InstanceRow({ inst, onRemove, onToggle }: {
 
 export default function Settings() {
   useSeoMeta({
-    title: 'Settings - Dsearch',
-    description: 'Configure appearance, search engines, relays and indexing for Dsearch.',
+    title: 'Settings - SAVEDD',
+    description: 'Configure appearance, search engines, relays and indexing for SAVEDD.',
   });
 
   return (

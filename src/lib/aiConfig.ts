@@ -25,6 +25,7 @@
 
 import { getAIProvider } from '@/lib/ai/registry';
 import type { EngineAIStatus } from '@/lib/ai/engineProxy';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 
 export type { EngineAIStatus } from '@/lib/ai/engineProxy';
 
@@ -40,7 +41,7 @@ export const COMMUNITY_AI_ENDPOINT = 'https://api.ppq.ai/v1';
 export const COMMUNITY_AI_KEY = 'sk-VPVVNlf79DvGjUfjjrHeFT';
 export const COMMUNITY_AI_MODEL = 'qwen/qwen-2.5-7b-instruct';
 
-const LS_KEY = 'presearchstr:ai-config';
+const LS_KEY = 'savedd:ai-config';
 
 export interface AIConfig {
   /** Master switch — AI answers only run when enabled. */
@@ -58,11 +59,11 @@ export interface AIConfig {
 }
 
 export const DEFAULT_AI_CONFIG: AIConfig = {
-  enabled: false,
-  providerId: 'ppq',
-  endpoint: 'https://api.ppq.ai/v1',
+  enabled: ENGINE_PROFILE.ai.enabledDefault,
+  providerId: ENGINE_PROFILE.ai.providerId,
+  endpoint: ENGINE_PROFILE.ai.endpoint,
   apiKey: '',
-  model: 'auto',
+  model: ENGINE_PROFILE.ai.model,
   includeNostr: false,
 };
 

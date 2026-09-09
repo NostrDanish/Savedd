@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { Search, Network, ExternalLink, Gem, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -19,7 +19,9 @@ import { PrivacyIndicator } from '@/components/PrivacyIndicator';
 import { InstantAnswer } from '@/components/InstantAnswer';
 import { TrendingQueries } from '@/components/TrendingQueries';
 import { QueryInsights } from '@/components/QueryInsights';
+import { ScriptureVerse } from '@/components/ScriptureVerse';
 import { Card, CardContent } from '@/components/ui/card';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import { useProviderSearch } from '@/hooks/useProviderSearch';
 import { useInstantAnswer } from '@/hooks/useInstantAnswer';
 import { useAIAnswer } from '@/hooks/useAIAnswer';
@@ -152,8 +154,10 @@ const Index = () => {
   const ai = useAIAnswer(activeQuery, organicResults, hasSearched && source !== 'i2p');
 
   useSeoMeta({
-    title: hasSearched ? `${activeQuery} - Dsearch` : 'Dsearch — The community-driven search engine',
-    description: 'The community-driven search engine. Powered by Nostr, owned by no one. SIP-01 federated web index, privacy-respecting web results. No backend, no tracking.',
+    title: hasSearched
+      ? `${activeQuery} - ${ENGINE_PROFILE.branding.name}`
+      : `${ENGINE_PROFILE.branding.name} — ${ENGINE_PROFILE.branding.slogan}`,
+    description: ENGINE_PROFILE.branding.description,
   });
 
   const handleSubmit = useCallback((value: string) => {
@@ -182,17 +186,13 @@ const Index = () => {
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 py-16">
           <div className="text-center mb-10 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700">
             <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <LogoMark className="w-16 h-16 rounded-2xl shadow-lg" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-primary animate-search-pulse" />
-              </div>
+              <LogoMark className="w-16 h-16 rounded-2xl" />
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-4">
-              <span className="text-primary">D</span>
-              <span className="text-foreground">search</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif font-semibold tracking-[0.18em] mb-4 text-foreground">
+              {ENGINE_PROFILE.branding.wordmark}
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
-              The community-driven search engine. Powered by Nostr, owned by no one.
+              {ENGINE_PROFILE.branding.slogan}
             </p>
           </div>
 
@@ -212,80 +212,29 @@ const Index = () => {
             />
           </div>
 
+          {ENGINE_PROFILE.ui.biblicalQuotes && (
+            <div className="mt-2 mb-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-700 motion-safe:delay-300">
+              <ScriptureVerse />
+            </div>
+          )}
+
           <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500 motion-safe:delay-300">
             <SourceTabs value={source} onChange={handleSourceChange} />
           </div>
 
-          {/* Privacy traffic-light — honest signal about who sees the query */}
           <div className="mt-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500 motion-safe:delay-500">
             <PrivacyIndicator source={providerSource as SearchSource | 'all'} />
           </div>
 
-          {/* Trending cached queries — the community index as content */}
-          <TrendingQueries
-            onSelect={(q) => {
-              setQuery(q);
-              handleSubmit(q);
-            }}
-            className="mt-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500 motion-safe:delay-700"
-          />
-
-          {/* The four pillars — what you can do inside the Dsearch ecosystem */}
-          <div className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-3xl motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500 motion-safe:delay-1000">
-            <HomePillar
-              to="/explore"
-              icon={<Search className="w-4 h-4 text-primary" />}
-              title="Search"
-              description="The community-built web index"
+          {ENGINE_PROFILE.ui.showTrending && (
+            <TrendingQueries
+              onSelect={(q) => {
+                setQuery(q);
+                handleSubmit(q);
+              }}
+              className="mt-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500 motion-safe:delay-700"
             />
-            <HomePillar
-              to="/build/crawlstr"
-              icon={<Gem className="w-4 h-4 text-primary" />}
-              title="Contribute"
-              description="Crawl the web, grow the index"
-            />
-            <HomePillar
-              to="/build"
-              icon={<Network className="w-4 h-4 text-primary" />}
-              title="Build"
-              description="Run a crawler, indexer or relay"
-            />
-            <HomePillar
-              to="/protocol"
-              icon={<ExternalLink className="w-4 h-4 text-primary" />}
-              title="Protocol"
-              description="Build on SIP, the open standard"
-            />
-          </div>
-
-          {/* The ecosystem — every piece, what it does, and where to run it */}
-          <div className="mt-14 w-full max-w-3xl motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500 motion-safe:delay-1000">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground/60 text-center mb-4">
-              One ecosystem, five runnable pieces
-            </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 text-left">
-              {[
-                { name: 'Dsearch', role: 'The search engine — you are here', to: '/about' },
-                { name: 'SIP', role: 'The protocol — how the index is shared', to: '/protocol' },
-                { name: 'Crawlstr', role: 'The crawler — discovers the web', to: '/build/crawlstr' },
-                { name: 'Indexstr', role: 'The indexer — builds the index', to: '/build/indexstr' },
-                { name: 'SIP Relays', role: 'The backbone — distribute the index', to: '/build/relay' },
-                { name: 'Network', role: 'The live view — relays, nodes, observations', to: '/network' },
-              ].map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.to}
-                  className="group flex items-center gap-3 rounded-lg border border-border/40 px-3.5 py-2.5 transition-colors hover:border-primary/30 hover:bg-primary/5"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-foreground">{item.name}</span>
-                    <span className="block text-xs text-muted-foreground truncate">{item.role}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </Layout>
     );
@@ -370,20 +319,24 @@ const Index = () => {
                     <p className="text-muted-foreground max-w-sm mx-auto mb-5">
                       No results found for &ldquo;{activeQuery}&rdquo;.
                     </p>
-                    <TrendingQueries
-                      limit={5}
-                      onSelect={(q) => {
-                        setQuery(q);
-                        handleSubmit(q);
-                      }}
-                    />
-                    <button
-                      onClick={() => setStakeOpen(true)}
-                      className="inline-flex items-center gap-1.5 mt-5 text-xs text-primary/80 hover:text-primary transition-colors"
-                    >
-                      <Gem className="w-3 h-3" />
-                      Be the first to stake this keyword
-                    </button>
+                    {ENGINE_PROFILE.ui.showTrending && (
+                      <TrendingQueries
+                        limit={5}
+                        onSelect={(q) => {
+                          setQuery(q);
+                          handleSubmit(q);
+                        }}
+                      />
+                    )}
+                    {ENGINE_PROFILE.ui.showStake && (
+                      <button
+                        onClick={() => setStakeOpen(true)}
+                        className="inline-flex items-center gap-1.5 mt-5 text-xs text-primary/80 hover:text-primary transition-colors"
+                      >
+                        <Gem className="w-3 h-3" />
+                        Be the first to stake this keyword
+                      </button>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -403,14 +356,16 @@ const Index = () => {
                       <span className="ml-2 text-primary animate-search-pulse">more loading...</span>
                     )}
                   </p>
-                  <button
-                    onClick={() => setStakeOpen(true)}
-                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-primary transition-colors shrink-0"
-                    title="Stake this keyword — your link takes the top spot for this search"
-                  >
-                    <Gem className="w-3 h-3" />
-                    Stake this keyword
-                  </button>
+                  {ENGINE_PROFILE.ui.showStake && (
+                    <button
+                      onClick={() => setStakeOpen(true)}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70 hover:text-primary transition-colors shrink-0"
+                      title="Stake this keyword — your link takes the top spot for this search"
+                    >
+                      <Gem className="w-3 h-3" />
+                      Stake this keyword
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -470,12 +425,13 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Keyword staking dialog (prefilled with the active query) */}
-      <StakeKeywordDialog
-        open={stakeOpen}
-        onOpenChange={setStakeOpen}
-        initialKeyword={activeQuery}
-      />
+      {ENGINE_PROFILE.ui.showStake && (
+        <StakeKeywordDialog
+          open={stakeOpen}
+          onOpenChange={setStakeOpen}
+          initialKeyword={activeQuery}
+        />
+      )}
     </Layout>
   );
 };
@@ -597,27 +553,6 @@ function I2PDirectory({ query }: { query: string }) {
       </div>
       <BrowserFallback query={query} />
     </div>
-  );
-}
-
-/* ─── Home pillar card ─── */
-function HomePillar({ to, icon, title, description }: {
-  to: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Link
-      to={to}
-      className="group flex flex-col items-start gap-2 rounded-xl border border-border/50 bg-card/50 p-4 text-left transition-colors hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 group-hover:border-primary/40 transition-colors">
-        {icon}
-      </span>
-      <span className="text-sm font-semibold text-foreground">{title}</span>
-      <span className="text-xs text-muted-foreground leading-relaxed">{description}</span>
-    </Link>
   );
 }
 
