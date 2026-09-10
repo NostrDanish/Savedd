@@ -19,6 +19,8 @@ describe('community engine profile', () => {
   it('keeps SIP-01 and Brave as first-class search sources', () => {
     expect(ENGINE_PROFILE.search.sip01).toBe(true);
     expect(ENGINE_PROFILE.search.brave).toBe(true);
+    // SIP-01 observations are attributed to SAVEDD, not the Dsearch core.
+    expect(ENGINE_PROFILE.search.indexerSource).toBe('savedd-web/1');
     expect(ENGINE_PROFILE.search.disabledProviders).not.toContain('web-index');
     expect(ENGINE_PROFILE.search.disabledProviders).not.toContain('brave');
     expect(ENGINE_PROFILE.search.disabledProviders).not.toContain('searxng');

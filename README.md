@@ -23,7 +23,7 @@ Dsearch Core  +  SIP-01 shared index  +  Community Engine Profile
 
 The next community engine should be another profile, not another fork of the pipeline.
 
-The SAVEDD profile lives in [`src/lib/engine/profile.ts`](src/lib/engine/profile.ts): branding, enabled providers, UI flags, and the Christian AI system prompt.
+The SAVEDD profile lives in [`src/lib/engine/profile.ts`](src/lib/engine/profile.ts): branding, enabled providers, UI flags, the SIP-01 indexer source id (`savedd-web/1`), and the Christian AI system prompt.
 
 ---
 

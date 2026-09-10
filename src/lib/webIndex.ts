@@ -20,6 +20,7 @@
  */
 import type { NostrEvent } from '@nostrify/nostrify';
 
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import type { SearchResult } from '@/lib/providers/types';
 
 /** Web Index Observation kind (addressable). Draft allocation — see spec §2. */
@@ -142,7 +143,7 @@ export interface IndexObservationInput {
   tags?: string[];
   language?: string;
   published?: number;
-  source?: string; // indexer software id, e.g. "dsearch-web/1"
+  source?: string; // indexer software id, e.g. "savedd-web/1" (ENGINE_PROFILE.search.indexerSource)
   /* Registered extension tags (spec §9.2) — all optional, all validated. */
   /** Logical document type: page, article, repository, video, image, file, … */
   type?: string;
@@ -367,6 +368,7 @@ export function observationFromResult(result: SearchResult): IndexObservationInp
     image: result.thumbnail,
     tags: result.tags,
     published: result.timestamp,
-    source: 'dsearch-web/1',
+    // Attributed to the branded engine (SAVEDD), not the shared Dsearch core.
+    source: ENGINE_PROFILE.search.indexerSource,
   };
 }

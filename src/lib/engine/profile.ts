@@ -33,6 +33,13 @@ export interface EngineBranding {
 export interface EngineSearchConfig {
   /** SIP-01 community index is a first-class source. */
   sip01: boolean;
+  /**
+   * Indexer software id stamped as the `source` tag on every SIP-01
+   * kind 39697 observation this engine publishes (spec §6). One id per
+   * branded engine, so the network attributes contributions to this
+   * engine — not to the shared Dsearch core it runs on.
+   */
+  indexerSource: string;
   /** Brave Search via the engine proxy (and/or a user BYOK key). */
   brave: boolean;
   /**
@@ -145,6 +152,7 @@ export const SAVEDD_PROFILE: CommunityEngineProfile = {
   },
   search: {
     sip01: true,
+    indexerSource: 'savedd-web/1',
     brave: true,
     // Keep SIP-01 (web-index), Brave, DuckDuckGo, and SearXNG on.
     // Everything else stays in the architecture but is off for this profile.
