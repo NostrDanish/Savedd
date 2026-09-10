@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Settings, PlusCircle, Menu } from 'lucide-react';
+import { Search, Settings, PlusCircle, Menu, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { LogoMark } from '@/components/LogoMark';
 import { SubmitToIndex } from '@/components/SubmitToIndex';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import { cn } from '@/lib/utils';
 
@@ -17,17 +18,23 @@ interface LayoutProps {
 
 const engine = ENGINE_PROFILE;
 
-const MOBILE_LINKS = [
-  { to: '/', label: 'Search' },
-  ...engine.ui.navLinks,
-  ...engine.ui.footerLinks.filter((l) => !engine.ui.navLinks.some((n) => n.to === l.to)),
-] as const;
-
 export function Layout({ children, minimal = false }: LayoutProps) {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const [submitOpen, setSubmitOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useCurrentUser();
+
+  // Bookmarks belong to the logged-in account — only surface the entry
+  // point when there is one.
+  const showBookmarks = engine.ui.showLogin && !!user;
+
+  const mobileLinks = [
+    { to: '/', label: 'Search' },
+    ...engine.ui.navLinks,
+    ...(showBookmarks ? [{ to: '/bookmarks', label: 'Bookmarks' }] : []),
+    ...engine.ui.footerLinks.filter((l) => !engine.ui.navLinks.some((n) => n.to === l.to)),
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -50,7 +57,9 @@ export function Layout({ children, minimal = false }: LayoutProps) {
             </span>
           </Link>
 
-          <nav className="hidden sm:flex items-center gap-1" aria-label="Primary">
+          {/* Site menu — everything lives in this one cluster, on desktop
+              (text links) and mobile (sheet). No floating orphan links. */}
+          <nav className="flex items-center gap-1" aria-label="Site">
             {engine.ui.navLinks.map((link) => (
               <Button
                 key={link.to}
@@ -58,18 +67,33 @@ export function Layout({ children, minimal = false }: LayoutProps) {
                 size="sm"
                 asChild
                 className={cn(
-                  'text-muted-foreground hover:text-foreground',
+                  'hidden sm:inline-flex text-muted-foreground hover:text-foreground',
                   location.pathname.startsWith(link.to) && 'text-foreground bg-accent/50',
                 )}
               >
                 <Link to={link.to}>{link.label}</Link>
               </Button>
             ))}
-          </nav>
 
-          <nav className="flex items-center gap-1" aria-label="App">
+            {showBookmarks && (
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className={cn(
+                  'hidden sm:inline-flex text-muted-foreground hover:text-foreground',
+                  location.pathname.startsWith('/bookmarks') && 'text-foreground bg-accent/50',
+                )}
+              >
+                <Link to="/bookmarks">
+                  <Bookmark className="w-4 h-4 mr-1.5" />
+                  Bookmarks
+                </Link>
+              </Button>
+            )}
+
             {!isHome && (
-              <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
                 <Link to="/">
                   <Search className="w-4 h-4 mr-1.5" />
                   Search
@@ -120,7 +144,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 px-4 pb-6" aria-label="Mobile">
-                  {MOBILE_LINKS.map((link) => (
+                  {mobileLinks.map((link) => (
                     <Link
                       key={link.to}
                       to={link.to}

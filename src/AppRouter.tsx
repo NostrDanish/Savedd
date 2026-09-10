@@ -4,6 +4,7 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import Index from "./pages/Index";
 import Policy from "./pages/Policy";
 import About from "./pages/About";
+import Bookmarks from "./pages/Bookmarks";
 import Settings from "./pages/Settings";
 import Explore from "./pages/Explore";
 import Admin from "./pages/Admin";
@@ -30,6 +31,7 @@ export function AppRouter() {
         <Route path="/" element={<Index />} />
         <Route path="/policy" element={<Policy />} />
         <Route path="/about" element={<About />} />
+        <Route path="/bookmarks" element={<Bookmarks />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/explore" element={<Explore />} />
         {/* Ecosystem hub */}

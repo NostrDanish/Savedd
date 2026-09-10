@@ -226,7 +226,7 @@ export const SAVEDD_PROFILE: CommunityEngineProfile = {
     showTrending: false,
     showSubmit: false,
     showStake: false,
-    showLogin: false,
+    showLogin: true,
     showNostr: false,
     biblicalQuotes: true,
     tabConfig: {

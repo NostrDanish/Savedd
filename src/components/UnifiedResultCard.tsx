@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Globe, ExternalLink, Zap, Shield, AlertTriangle,
-  BookOpen, Newspaper, Code, User, FileText, Flag,
+  BookOpen, Newspaper, Code, User, FileText, Flag, Bookmark,
 } from 'lucide-react';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -21,6 +21,9 @@ import { OnionWarningDialog } from '@/components/OnionWarningDialog';
 import { ReportDialog } from '@/components/ReportDialog';
 import { VoteButtons } from '@/components/VoteButtons';
 import { sanitizeUrl, sanitizeResultUrl } from '@/lib/sanitizeUrl';
+import { useWebBookmarks, bookmarkDForUrl } from '@/hooks/useWebBookmarks';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import type { SearchResult } from '@/lib/providers/types';
 import { cn } from '@/lib/utils';
 
@@ -287,6 +290,11 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
   const style = SOURCE_STYLE[result.source] ?? SOURCE_STYLE.web;
   const community = COMMUNITY_PROVIDERS[result.provider];
   const [reportOpen, setReportOpen] = useState(false);
+  const { user } = useCurrentUser();
+  // Shared query cache — every card on the page reads the same bookmark list.
+  const bookmarks = useWebBookmarks();
+  const bookmarkD = bookmarkDForUrl(result.url);
+  const bookmarked = bookmarkD !== null && bookmarks.isBookmarked(result.url);
 
   // Nostr-native providers (wiki/git pools) link to internal /nip19 routes —
   // those navigate client-side via the router. Everything else opens in a
@@ -359,7 +367,7 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
         </p>
       )}
 
-      {/* Footer: votes, author, timestamp, tags, report */}
+      {/* Footer: votes, author, timestamp, tags, bookmark, report */}
       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground/60 flex-wrap">
         <VoteButtons result={result} />
         {result.author && <span>by {result.author}</span>}
@@ -367,15 +375,41 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
         {result.tags && result.tags.length > 0 && (
           <span className="font-mono">{result.tags.join(' · ')}</span>
         )}
-        <button
-          type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReportOpen(true); }}
-          className="ml-auto inline-flex items-center gap-1 text-muted-foreground/50 hover:text-destructive transition-colors"
-          aria-label="Report this result"
-          title="Report this result (NIP-56)"
-        >
-          <Flag className="w-3.5 h-3.5" />
-        </button>
+        <span className="ml-auto inline-flex items-center gap-1">
+          {ENGINE_PROFILE.ui.showLogin && user && bookmarkD !== null && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (bookmarked) {
+                  bookmarks.removeBookmark(bookmarkD);
+                } else {
+                  bookmarks.addBookmark({ url: result.url, title: result.title, snippet: result.snippet });
+                }
+              }}
+              className={cn(
+                'inline-flex items-center gap-1 transition-colors',
+                bookmarked
+                  ? 'text-primary hover:text-primary/70'
+                  : 'text-muted-foreground/50 hover:text-primary',
+              )}
+              aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark this page'}
+              title={bookmarked ? 'Remove bookmark (NIP-B0)' : 'Save to your Nostr bookmarks (NIP-B0)'}
+            >
+              <Bookmark className={cn('w-3.5 h-3.5', bookmarked && 'fill-current')} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReportOpen(true); }}
+            className="inline-flex items-center gap-1 text-muted-foreground/50 hover:text-destructive transition-colors"
+            aria-label="Report this result"
+            title="Report this result (NIP-56)"
+          >
+            <Flag className="w-3.5 h-3.5" />
+          </button>
+        </span>
       </div>
     </div>
   );

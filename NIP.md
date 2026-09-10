@@ -12,7 +12,7 @@ formats. Current support:
 | NIP-23 | Long-form articles | 30023 | ✅ read (Nostr tab + All) |
 | NIP-24 | Extra metadata (`display_name`, `website`, `banner`, `bot`) | 0 | ✅ read (profile pages) |
 | NIP-25 | Reactions (votes) | 7 | ✅ read + write — 👍/👎 on results; anonymous via the device indexing identity by default, or the user's npub when toggled |
-| NIP-09 | Deletion | 5 | ✅ write (owner retracts moderation labels) |
+| NIP-09 | Deletion | 5 | ✅ write (owner retracts moderation labels; users retract their own web bookmarks) |
 | NIP-32 | Labeling (`L`/`l`) | —, 1985 | ✅ write (abuse reports self-label with `0xsearchstr.abuse`; owner moderation labels under `0xsearchstr.moderation`) + ✅ read (owner-signed `hidden` labels filter all users' results) |
 | NIP-34 | Git collaboration | 30617, 1621, 1618, 1617 | ✅ read — Code tab: repos (link `web`/`clone`), issues, PRs, patches from the read-only ngit/GRASP pool (`GIT_RELAYS`) |
 | NIP-35 | Torrents | 2003 | ✅ read — results link the constructed magnet URI |
@@ -25,7 +25,7 @@ formats. Current support:
 | NIP-78 | App-specific data | 30078 | ✅ submissions / stakes / term signals (read + write) · legacy cache (read-only, see below) |
 | NIP-92 | Media attachments (`imeta`) | 1 | ✅ read (inline thumbnails in results) |
 | NIP-94 | File metadata | 1063 | ✅ read (file results) |
-| NIP-B0 | Web bookmarks | 39701 | ✅ read (Community provider — user-curated links) |
+| NIP-B0 | Web bookmarks | 39701 | ✅ read (Community provider — user-curated links) + ✅ write (logged-in users save/remove bookmarks on results and manage them at `/bookmarks`) |
 | NIP-C0 | Code snippets | 1337 | ✅ read (Code tab, language badges) |
 | BUD-03 | Blossom user server list | 10063 | ✅ read + write (uploads) |
 | SIP-01 | Search Index Protocol | 39697 | ✅ read + write ([spec](docs/SIP-01.md)) |
