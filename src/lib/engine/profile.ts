@@ -192,7 +192,7 @@ export const SAVEDD_PROFILE: CommunityEngineProfile = {
       'SAVEDD searches Scripture, the Church, and the open web. Optional AI answers are grounded in sources — never invented, never claimed as revelation.',
     ogImage: 'https://savedd.com/og.jpg',
     defaultTheme: 'light',
-    searchPlaceholder: 'Ask of the Word, the Church, and the world…',
+    searchPlaceholder: 'Search the web',
     wordmark: 'SAVEDD',
   },
   search: {
