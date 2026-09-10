@@ -16,10 +16,12 @@ import { proxiedFetch } from '@/lib/corsProxy';
 import { getWebEngineBases } from './enginePriority';
 import { braveLanguageParam } from '@/lib/languageFilter';
 import { toEngineQuery } from '@/lib/queryParser';
+import { ENGINE_AI_BASE } from '@/lib/aiConfig';
 
 const LS_BRAVE_KEY = 'presearchstr:brave-api-key';
 const API_URL = 'https://api.search.brave.com/res/v1/web/search';
-const ENGINE_BRAVE_URL = '/api/search/brave';
+// Engine Brave lives on the same worker as engine AI (/api/ai ↔ /api/search).
+const ENGINE_BRAVE_URL = `${ENGINE_AI_BASE.replace(/\/ai$/, '')}/search/brave`;
 
 /** Read the user's Brave API key (empty when unset). */
 export function getBraveApiKey(): string {

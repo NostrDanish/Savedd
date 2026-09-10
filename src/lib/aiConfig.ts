@@ -29,8 +29,21 @@ import { ENGINE_PROFILE } from '@/lib/engine/profile';
 
 export type { EngineAIStatus } from '@/lib/ai/engineProxy';
 
-/** Same-origin base of the engine-AI proxy (served by worker.ts). */
-export const ENGINE_AI_BASE = '/api/ai';
+/**
+ * Base of the engine-AI proxy (worker.ts).
+ *
+ * Default is same-origin `/api/ai` — correct when the worker serves the
+ * static app itself (wrangler deploy with assets) or when the host rewrites
+ * /api/* to the worker. SAVEDD's production frontend is static on Vercel,
+ * whose external rewrites cannot forward POST bodies, so the deployment
+ * points the engine base at the worker directly via the non-secret build
+ * var VITE_ENGINE_API_BASE (e.g. https://savedd.savedd.workers.dev/api/ai).
+ * The worker reflects an allowlisted Origin, so cross-origin calls carry no
+ * cookies and expose no keys. Forks that co-locate the worker simply leave
+ * the var unset and keep the same-origin default.
+ */
+export const ENGINE_AI_BASE: string =
+  (import.meta.env.VITE_ENGINE_API_BASE as string | undefined)?.replace(/\/$/, '') || '/api/ai';
 
 /** Built-in free tier — shared, rate-limited PPQ key. Provider + model are
  *  locked on this tier. PUBLIC BY DESIGN (ships in the bundle): it exists so

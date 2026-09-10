@@ -58,6 +58,21 @@ Non-secret defaults are in `wrangler.jsonc` (`AI_PROVIDER_ENDPOINT`, `AI_MODEL`,
 
 ---
 
+## Production wiring
+
+- **Frontend**: [savedd.com](https://savedd.com) is served by Vercel from this repo.
+- **API signer**: the Cloudflare Worker (`savedd.savedd.workers.dev`) holds
+  `OPENAI_API_KEY` / `BRAVE_API_KEY` server-side and serves `/api/ai/*` +
+  `/api/search/brave/*`. Vercel rewrites `/api/*` to it (see `vercel.json`),
+  so the browser only ever talks same-origin — no keys, no CORS surface.
+- Canonical worker definition: `worker.ts` + `wrangler.jsonc`
+  (`wrangler deploy`). `worker.api-entry.ts` is the thin wrapper used when
+  deploying the same worker through the Cloudflare REST API (single-module
+  upload can't carry `vars`, so the non-secret defaults are inlined there;
+  secrets still come from the Worker secret store).
+
+---
+
 ## Quick start
 
 ```bash
