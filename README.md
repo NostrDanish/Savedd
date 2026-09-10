@@ -39,7 +39,7 @@ The SAVEDD profile lives in [`src/lib/engine/profile.ts`](src/lib/engine/profile
 
 Optional, evidence-grounded, ephemeral (never indexed).
 
-Credential order: your own OpenAI-compatible key → engine-provided proxy (`/api/ai`, operator `AI_API_KEY`) → built-in free tier → unavailable.
+Credential order: your own OpenAI-compatible key → engine-provided proxy (`/api/ai`, operator `OPENAI_API_KEY`) → built-in free tier → unavailable.
 
 On the engine tier the SAVEDD system prompt is injected **server-side**. Clients cannot override it.
 
@@ -50,8 +50,8 @@ On the engine tier the SAVEDD system prompt is injected **server-side**. Clients
 Never put keys in Vite `VITE_*` variables or the frontend bundle.
 
 ```bash
-wrangler secret put AI_API_KEY      # OpenAI or compatible
-wrangler secret put BRAVE_API_KEY   # Brave Search
+wrangler secret put OPENAI_API_KEY   # OpenAI or compatible (legacy alias: AI_API_KEY)
+wrangler secret put BRAVE_API_KEY    # Brave Search
 ```
 
 Non-secret defaults are in `wrangler.jsonc` (`AI_PROVIDER_ENDPOINT`, `AI_MODEL`, `AI_PROVIDER_NAME`).

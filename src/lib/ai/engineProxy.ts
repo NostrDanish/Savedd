@@ -46,7 +46,13 @@ export interface KVLike {
 export interface EngineAIEnv {
   /** Public key (hex) allowed to administer engine AI. Not a secret. */
   OWNER_PUBKEY?: string;
-  /** Env-var fallback config (secrets set via `wrangler secret put`). */
+  /**
+   * Env-var fallback config (secrets set via `wrangler secret put`).
+   * Canonical secret name: OPENAI_API_KEY. AI_API_KEY is accepted as a
+   * legacy alias so existing deployments keep working.
+   */
+  OPENAI_API_KEY?: string;
+  /** @deprecated Legacy alias for OPENAI_API_KEY. */
   AI_API_KEY?: string;
   AI_PROVIDER_ENDPOINT?: string;
   AI_MODEL?: string;
@@ -70,7 +76,8 @@ export const ENGINE_SYSTEM_PROMPT = ENGINE_PROFILE.ai.systemPrompt;
 /* ------------------------------------------------------------------ */
 
 function configFromEnv(env: EngineAIEnv): EngineAIConfig | null {
-  const apiKey = env.AI_API_KEY?.trim();
+  // Canonical secret name is OPENAI_API_KEY; AI_API_KEY is the legacy alias.
+  const apiKey = env.OPENAI_API_KEY?.trim() || env.AI_API_KEY?.trim();
   if (!apiKey) return null;
   return {
     enabled: env.AI_ENGINE_ENABLED !== 'false',

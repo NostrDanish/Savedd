@@ -5,10 +5,14 @@
  * /api/ai/* — same origin, so no CORS and no key ever reaches a browser.
  *
  * Operator setup (engine-provided AI):
- *   1. wrangler secret put AI_API_KEY          ← OpenAI (or compatible) key
+ *   1. wrangler secret put OPENAI_API_KEY      ← OpenAI (or compatible) key
+ *      (legacy alias AI_API_KEY is also accepted by the worker)
  *   1b. wrangler secret put BRAVE_API_KEY      ← Brave Search token (never committed)
  *   2. Set the non-secret vars below (OWNER_PUBKEY enables the Admin → AI tab)
  *   3. wrangler deploy
+ *
+ * Secrets (OPENAI_API_KEY, BRAVE_API_KEY) must NEVER appear in this file,
+ * in "vars", or anywhere in the repo — only in the Worker secret store.
  *
  * Optional — admin-UI-managed config (write the key from the Admin tab
  * instead of env vars): create a KV namespace and uncomment the binding:
@@ -31,7 +35,7 @@
     "OWNER_PUBKEY": "c45041618951bb6012ac23f5cdf3d740465f2d640be841fd9bb1d0733370cd3c",
     // Non-secret provider defaults (override per deployment):
     "AI_PROVIDER_ENDPOINT": "https://api.openai.com/v1",
-    "AI_MODEL": "gpt-4o-mini",
+    "AI_MODEL": "gpt-5.6-luna",
     "AI_PROVIDER_NAME": "OpenAI",
     "AI_ENGINE_ENABLED": "true"
   }

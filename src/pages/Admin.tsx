@@ -649,7 +649,7 @@ function AITab() {
             <p className="text-xs text-muted-foreground leading-relaxed">
               No engine key configured. Users fall back to their own keys (Settings → AI).
               {isOwner
-                ? ' Configure one below, or set AI_API_KEY as a worker secret and redeploy.'
+                ? ' Configure one below, or set OPENAI_API_KEY as a worker secret and redeploy.'
                 : ' Only the owner can configure engine AI.'}
             </p>
           )}

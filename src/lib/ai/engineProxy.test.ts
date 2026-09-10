@@ -24,7 +24,7 @@ import {
 const CONFIG: EngineAIConfig = {
   enabled: true,
   endpoint: 'https://api.openai.com/v1',
-  model: 'gpt-4o-mini',
+  model: 'gpt-5.6-luna',
   apiKey: 'sk-test-secret-key-1234567890abcdef',
   providerName: 'OpenAI',
 };

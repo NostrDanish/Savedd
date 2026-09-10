@@ -10,7 +10,8 @@
  *   POST /api/search/brave         → Brave Search proxy, key injected here
  *
  * Operator configuration (nothing secret in the repo):
- *   wrangler secret put AI_API_KEY            ← OpenAI (or compatible) key
+ *   wrangler secret put OPENAI_API_KEY        ← OpenAI (or compatible) key
+ *     (legacy alias: AI_API_KEY is also accepted)
  *   wrangler secret put BRAVE_API_KEY         ← Brave Search subscription token
  *   AI_PROVIDER_ENDPOINT / AI_MODEL / AI_PROVIDER_NAME / AI_ENGINE_ENABLED (vars)
  *   OWNER_PUBKEY (var, hex)                   ← enables the Admin → AI tab
