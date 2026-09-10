@@ -1,5 +1,5 @@
 /**
- * DSearch — Cloudflare Worker config
+ * SAVEDD — Cloudflare Worker config
  *
  * The worker (worker.ts) serves the static app AND the engine-AI proxy at
  * /api/ai/* — same origin, so no CORS and no key ever reaches a browser.

@@ -9,12 +9,15 @@ import { LoginArea } from '@/components/auth/LoginArea';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { buildReportEvent, REPORT_TYPES } from '@/lib/reports';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import { useState } from 'react';
+
+const engine = ENGINE_PROFILE;
 
 export default function Policy() {
   useSeoMeta({
-    title: 'Content Policy - SAVEDD',
-    description: 'Content policy and moderation practices for SAVEDD. Modeled on the Ahmia approach to responsible indexing.',
+    title: `Content Policy - ${engine.branding.name}`,
+    description: `Content policy and moderation practices for ${engine.branding.name}. Modeled on the Ahmia approach to responsible indexing.`,
   });
 
   return (
@@ -28,7 +31,7 @@ export default function Policy() {
           <h1 className="text-3xl font-bold tracking-tight">Content Policy</h1>
         </div>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          Dsearch indexes content from multiple networks. This document describes what we do
+          {engine.branding.name} indexes content from multiple networks. This document describes what we do
           and don't index, and why. Our approach mirrors the{' '}
           <a
             href="https://ahmia.fi/documentation/"
@@ -138,8 +141,8 @@ export default function Policy() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Dsearch exists to serve legitimate privacy, journalism, and whistleblowing use cases.
-              We index:
+              {engine.branding.name} exists to serve legitimate study, research, journalism, and
+              privacy use cases. We index:
             </p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               {[
@@ -169,11 +172,11 @@ export default function Policy() {
         {/* Legal */}
         <div className="mt-8 p-4 rounded-xl bg-muted/50 border border-border/50">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">Threat Model Note:</strong> Dsearch is a search
+            <strong className="text-foreground">Threat Model Note:</strong> {engine.branding.name} is a search
             interface and indexing system, not a proxy or gateway. We do not host, cache, or serve
             any indexed content. Search results link to their original sources. Users are responsible
             for understanding the legal implications of accessing content in their jurisdiction. The
-            content policy exists to prevent Dsearch from becoming a discovery vector for the
+            content policy exists to prevent {engine.branding.name} from becoming a discovery vector for the
             worst categories of illegal content — an indiscriminate crawler is how a project like
             this gets its domain seized or its maintainer prosecuted.
           </p>

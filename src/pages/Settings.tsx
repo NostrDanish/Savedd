@@ -43,6 +43,7 @@ import { getParallelApiKey, setParallelApiKey } from '@/lib/providers/parallel';
 import { ALL_PROVIDERS } from '@/lib/providers/registry';
 import { AI_PROVIDERS, getAIProvider, PPQ_INVITE_URL } from '@/lib/ai/registry';
 import { COMMUNITY_AI_MODEL, getAIConfig, hasOwnAIKey, resolveAIConfig, setAIConfig, type AIConfig } from '@/lib/aiConfig';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import { useEngineAIStatus } from '@/hooks/useEngineAIStatus';
 import type { AIModel } from '@/lib/ai/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -478,7 +479,7 @@ function PrivacySection() {
       </div>
 
       <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed">
-        Dsearch itself never logs, stores, or transmits your searches to its own servers — there are no
+        {ENGINE_PROFILE.branding.name} itself never logs, stores, or transmits your searches to its own servers — there are no
         servers. Contributed index entries are published to public Nostr relays under this device's dedicated
         indexing identity (see the Auto Indexer tab), never under your personal Nostr account, and never contain
         your query. For the full picture, read the <a href="/about" className="text-primary hover:underline">threat model</a>.
@@ -687,8 +688,8 @@ function YourRelaysSection() {
       <h2 className="text-sm font-semibold mb-1">Your Relays</h2>
       <p className="text-xs text-muted-foreground mb-4">
         Your NIP-65 relay list — where your profile, submissions, and other events are
-        published and read. Defaults to the Dsearch app relays for new users;
-        changes sync to Nostr (kind 10002) when you're logged in.
+        published and read. Defaults to the {ENGINE_PROFILE.branding.name} app relays for new
+        users; changes sync to Nostr (kind 10002) when you're logged in.
       </p>
       <Card className="border-border/60">
         <CardContent className="py-4">
@@ -849,7 +850,7 @@ const ENGINE_META: Record<string, { icon: React.ReactNode; note: string }> = {
   parallel: { icon: <Sparkles className="w-4 h-4" />, note: 'Parallel Search API — long dense excerpts (BYOK, free starting credits); every result feeds the index' },
   'web-index': { icon: <Search className="w-4 h-4" />, note: 'The shared SIP-01 community web index (kind 39697)' },
   'cached-index': { icon: <Database className="w-4 h-4" />, note: 'Legacy federated query cache (kind 30078)' },
-  'keyword-stakes': { icon: <Star className="w-4 h-4" />, note: 'Community keyword stakes — Presearch-style top placements' },
+  'keyword-stakes': { icon: <Star className="w-4 h-4" />, note: 'Community keyword stakes — staked top placements' },
   community: { icon: <Check className="w-4 h-4" />, note: 'User-curated submissions + NIP-B0 bookmarks' },
   nostr: { icon: <Zap className="w-4 h-4" />, note: 'NIP-50 full-text search: notes, articles, wiki, files, torrents, code' },
   wikipedia: { icon: <Globe className="w-4 h-4" />, note: 'Wikipedia articles (direct MediaWiki API)' },
@@ -2207,7 +2208,7 @@ export default function Settings() {
             <Separator className="mb-10" />
             <RelayPoolSection
               title="Search Relays"
-              description="NIP-50 relays queried in parallel for every full-text Nostr search — including the UNCAGED SIP cluster (web-index operators over the SIP-01 document index) plus auto-discovered NIP-11-verified relays. Dsearch's defaults are suggestions — hide any of them or add your own."
+              description={`NIP-50 relays queried in parallel for every full-text Nostr search — including the UNCAGED SIP cluster (web-index operators over the SIP-01 document index) plus auto-discovered NIP-11-verified relays. ${ENGINE_PROFILE.branding.name}'s defaults are suggestions — hide any of them or add your own.`}
               addLabel="Custom search relay URL"
               kind="search"
             />

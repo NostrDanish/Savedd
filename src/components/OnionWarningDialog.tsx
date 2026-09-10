@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { sanitizeResultUrl } from '@/lib/sanitizeUrl';
+import { ENGINE_PROFILE } from '@/lib/engine/profile';
 
 interface OnionWarningDialogProps {
   open: boolean;
@@ -40,7 +41,7 @@ export function OnionWarningDialog({ open, onOpenChange, url, type }: OnionWarni
               <div>
                 <p className="font-medium text-foreground mb-1">Privacy Notice</p>
                 <p className="text-muted-foreground">
-                  Dsearch does not proxy, cache, or render hidden service content.
+                  {ENGINE_PROFILE.branding.name} does not proxy, cache, or render hidden service content.
                   You are responsible for your own safety when visiting this link.
                   The content policy that governs our index does not extend to live site content.
                 </p>
