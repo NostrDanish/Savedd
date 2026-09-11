@@ -36,6 +36,36 @@ import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
 export function bootstrapNative(): void {
   if (!Capacitor.isNativePlatform()) return;
 
+  // External http(s) links → Custom Tabs / Safari View (stay in-app).
+  // preventDefault must run synchronously — keep the URL check inline.
+  document.addEventListener(
+    'click',
+    (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const anchor = target.closest('a[href]');
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return;
+      }
+      let external = false;
+      try {
+        const u = new URL(href, location.origin);
+        external = (u.protocol === 'http:' || u.protocol === 'https:') && u.origin !== location.origin;
+      } catch {
+        return;
+      }
+      if (!external) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void import('@/lib/openExternalUrl').then(({ openExternalUrl }) => {
+        openExternalUrl(anchor.href).catch(() => {});
+      });
+    },
+    true,
+  );
+
   // iOS-only: hide the keyboard accessory bar.
   if (Capacitor.getPlatform() === 'ios') {
     import('@capacitor/keyboard').then(({ Keyboard }) => {

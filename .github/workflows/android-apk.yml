@@ -1,0 +1,85 @@
+# Phase 0 — debug APK of SAVEDD (Capacitor WebView → https://savedd.com).
+#
+# Runs on every push to main and on manual dispatch. Commits the APK to
+# releases/savedd-debug.apk so it can be downloaded from the repo on a phone.
+# Unsigned debug APK: sideload only (Android will warn "unknown source").
+name: Android debug APK
+
+on:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "releases/**"
+  workflow_dispatch:
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Stub dist (Phase 0 loads https://savedd.com; webDir still required)
+        run: |
+          mkdir -p dist
+          if [ ! -f dist/index.html ]; then
+            echo '<!doctype html><html><body>SAVEDD</body></html>' > dist/index.html
+          fi
+
+      - name: Add Android platform if missing
+        run: |
+          if [ ! -d android ]; then
+            npx cap add android
+          fi
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Assemble debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Place APK in repo
+        run: |
+          mkdir -p releases
+          cp android/app/build/outputs/apk/debug/app-debug.apk releases/savedd-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: savedd-debug-apk
+          path: releases/savedd-debug.apk
+
+      - name: Commit APK into the repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add releases/savedd-debug.apk
+          if git diff --cached --quiet; then
+            echo "No APK change to commit"
+            exit 0
+          fi
+          git commit -m "Android: debug APK (Phase 0, WebView → savedd.com) [skip ci]"
+          git push

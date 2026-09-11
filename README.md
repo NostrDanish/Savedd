@@ -88,6 +88,10 @@ Open `http://localhost:8080` and search.
 
 SAVEDD wraps the same web app with [Capacitor](https://capacitorjs.com/). App id: `com.savedd.app`. Custom scheme: `savedd://`.
 
+**Phase 0 (current):** the Android WebView loads [savedd.com](https://savedd.com) live. Search, AI, and `/api/*` work as on the web. Result taps open in Chrome Custom Tabs.
+
+**Debug APK in this repo:** after CI runs, download [`releases/savedd-debug.apk`](https://github.com/NostrDanish/Savedd/raw/main/releases/savedd-debug.apk) on your phone and install (enable “Install unknown apps” for the browser). Unsigned debug build — sideload only.
+
 This environment cannot compile a signed APK or IPA (needs Android Studio / Xcode + a Mac for iOS). On your machine:
 
 ```bash

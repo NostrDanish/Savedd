@@ -37,6 +37,8 @@ yarn.lock
 
 # Native signing / local toolchain
 android/.gradle
+android/app/build
+android/build
 android/app/release
 android/app/debug
 android/local.properties

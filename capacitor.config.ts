@@ -4,9 +4,17 @@ const config: CapacitorConfig = {
   appId: 'com.savedd.app',
   appName: 'SAVEDD',
   webDir: 'dist',
+  // Phase 0 demo: the WebView loads the live site so /api/* Vercel rewrites
+  // just work. Production (M1) can drop `url` and bundle dist/ instead.
   server: {
+    url: 'https://savedd.com',
     androidScheme: 'https',
     iosScheme: 'https',
+    allowNavigation: [
+      'savedd.com',
+      '*.savedd.com',
+      'savedd.savedd.workers.dev',
+    ],
   },
   android: {
     allowMixedContent: false,

@@ -51,6 +51,9 @@ export async function downloadTextFile(filename: string, content: string): Promi
  *   <Button onClick={() => openUrl('https://example.com')}>Visit site</Button>
  */
 export async function openUrl(url: string): Promise<void> {
+  const { openExternalUrl } = await import('@/lib/openExternalUrl');
+  const opened = await openExternalUrl(url);
+  if (opened) return;
   if (Capacitor.isNativePlatform()) {
     const { Share } = await import('@capacitor/share');
     await Share.share({ url });
