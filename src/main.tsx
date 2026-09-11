@@ -22,8 +22,11 @@ window.addEventListener('unhandledrejection', (event) => {
 import './lib/polyfills.ts';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { bootstrapNative } from '@/lib/nativeBootstrap';
 import App from './App.tsx';
 import './index.css';
+
+bootstrapNative();
 
 import '@fontsource-variable/inter';
 import '@fontsource-variable/jetbrains-mono';

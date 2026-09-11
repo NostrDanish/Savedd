@@ -46,7 +46,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
       </a>
 
       <header className={cn(
-        'sticky top-0 z-40 border-b border-border/50 backdrop-blur-xl bg-background/80',
+        'sticky top-0 z-40 pt-safe border-b border-border/50 backdrop-blur-xl bg-background/80',
         minimal && 'border-transparent bg-transparent backdrop-blur-none',
       )}>
         <div className="container flex items-center justify-between h-14 gap-4">
@@ -169,7 +169,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
         {children}
       </main>
 
-      <footer className="border-t border-border/50 py-6">
+      <footer className="border-t border-border/50 py-6 pb-safe-or-6">
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 text-center sm:text-left">
             <span className="font-display font-semibold tracking-[0.16em] text-foreground/80">{engine.branding.wordmark}</span>

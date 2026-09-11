@@ -34,3 +34,15 @@ yarn.lock
 .env
 .env.*
 !.env.example
+
+# Native signing / local toolchain
+android/.gradle
+android/app/release
+android/app/debug
+android/local.properties
+ios/App/Pods
+ios/App/App.xcworkspace/xcuserdata
+*.keystore
+*.jks
+*.p12
+*.mobileprovision

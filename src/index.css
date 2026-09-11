@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "tailwindcss-safe-area";
+@import "./safe-area-shim.css";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

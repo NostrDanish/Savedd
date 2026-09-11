@@ -84,9 +84,46 @@ Open `http://localhost:8080` and search.
 
 ---
 
+## Native apps (Android APK / iOS)
+
+SAVEDD wraps the same web app with [Capacitor](https://capacitorjs.com/). App id: `com.savedd.app`. Custom scheme: `savedd://`.
+
+This environment cannot compile a signed APK or IPA (needs Android Studio / Xcode + a Mac for iOS). On your machine:
+
+```bash
+npm install
+npm run build
+
+# First time only — generate the native projects
+npx cap add android
+npx cap add ios          # macOS only
+
+npx cap sync
+```
+
+**Android APK (sideload / Play Store):**
+
+```bash
+npx cap open android
+```
+
+In Android Studio: **Build → Build Bundle(s) / APK(s) → Build APK(s)** for a debug APK, or **Generate Signed Bundle / APK** for a release you can publish. The APK lands under `android/app/build/outputs/apk/`.
+
+**iOS (TestFlight / App Store):**
+
+```bash
+npx cap open ios         # macOS + Xcode required
+```
+
+In Xcode: pick a simulator or a signed device, then **Product → Archive** for TestFlight / App Store. You need an Apple Developer account for a real device or store build.
+
+After UI changes, always `npm run cap:sync` (or `npm run cap:android` / `npm run cap:ios`) so the native shells pick up the new `dist/`.
+
+---
+
 ## Tech
 
-React 19 · TypeScript · Vite · TailwindCSS 4 · shadcn/ui · Nostrify · TanStack Query · Cloudflare worker (AI + Brave proxies)
+React 19 · TypeScript · Vite · TailwindCSS 4 · shadcn/ui · Nostrify · TanStack Query · Capacitor (Android / iOS) · Cloudflare worker (AI + Brave proxies)
 
 ## License
 
