@@ -1015,6 +1015,7 @@ function AffiliatesTab() {
   }, [draft, isLoading, rules]);
 
   const loaded = draft !== null;
+  const current = draft ?? [];
   const dirty = loaded && JSON.stringify(current) !== JSON.stringify(rules);
 
   const handleAdd = () => {
