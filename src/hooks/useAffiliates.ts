@@ -108,15 +108,30 @@ export function useAffiliateActions() {
     if (!user || !canManage) throw new Error('Only the owner or an admin can manage affiliate rules');
 
     const template = buildAffiliateRulesEvent(rules);
-    const event = await user.signer.signEvent({
-      kind: template.kind,
-      content: template.content,
-      tags: template.tags,
-      created_at: Math.floor(Date.now() / 1000),
-    });
 
-    const accepted = await publishToRelayPool(getModerationRelayUrls(), event, 6000);
-    if (accepted === 0) throw new Error('No relay accepted the event');
+    // Signing is a separate failure mode (a remote signer can time out on
+    // mobile/VPN) — give it its own message instead of a raw AbortError.
+    let event;
+    try {
+      event = await user.signer.signEvent({
+        kind: template.kind,
+        content: template.content,
+        tags: template.tags,
+        created_at: Math.floor(Date.now() / 1000),
+      });
+    } catch {
+      throw new Error('Signing failed — your signer did not respond. Check its connection and try again.');
+    }
+
+    // Relay publish on mobile/VPN can be slow: longer timeout + one retry.
+    let accepted = await publishToRelayPool(getModerationRelayUrls(), event, 12_000);
+    if (accepted === 0) {
+      await new Promise((r) => setTimeout(r, 2000));
+      accepted = await publishToRelayPool(getModerationRelayUrls(), event, 12_000);
+    }
+    if (accepted === 0) {
+      throw new Error('No relay accepted the event — check your connection (VPN?) and try again.');
+    }
 
     setTimeout(() => {
       void queryClient.invalidateQueries({ queryKey: ['affiliate-rules'] });

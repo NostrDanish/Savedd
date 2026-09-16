@@ -94,6 +94,23 @@ export function isValidAffiliateRule(rule: AffiliateRule): boolean {
 }
 
 /**
+ * Normalize whatever a user pastes into the host field down to a bare
+ * hostname: full URLs (https://ppq.ai/invite/x → ppq.ai), www prefixes,
+ * paths, ports, trailing dots. Forgiving input beats cryptic errors.
+ */
+export function normalizeHostInput(input: string): string {
+  let v = input.trim().toLowerCase();
+  if (v.includes('://')) {
+    try {
+      v = new URL(v).hostname;
+    } catch {
+      // Keep going — the path/port stripping below still helps.
+    }
+  }
+  return v.split('/')[0].split(':')[0].replace(/^www\./, '').replace(/\.$/, '');
+}
+
+/**
  * Parse an affiliate-config event into a validated rule list.
  * The author filter is the trust boundary — callers must only pass events
  * whose pubkey is the owner or an owner-listed admin (`trustedAuthors`);

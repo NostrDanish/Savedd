@@ -61,7 +61,7 @@ import {
 } from '@/hooks/useModeration';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useAffiliateRules, useAffiliateActions } from '@/hooks/useAffiliates';
-import { applyAffiliateRules, isValidAffiliateRule, type AffiliateRule } from '@/lib/affiliates';
+import { applyAffiliateRules, isValidAffiliateRule, normalizeHostInput, type AffiliateRule } from '@/lib/affiliates';
 import {
   OWNER_PUBKEY,
   ADMIN_ROLES_D_TAG,
@@ -1020,7 +1020,8 @@ function AffiliatesTab() {
 
   const handleAdd = () => {
     const rule: AffiliateRule = {
-      host: host.trim().toLowerCase().replace(/^www\./, '').replace(/\.$/, ''),
+      // Forgiving: pasting a full URL into the host field just works.
+      host: normalizeHostInput(host),
       mode,
       param: mode === 'param' ? param.trim() : undefined,
       value: mode === 'param' ? value.trim() : undefined,
@@ -1102,7 +1103,7 @@ function AffiliatesTab() {
         <CardContent className="py-4 space-y-3">
           <div className="flex gap-2 flex-wrap items-center">
             <Input
-              placeholder="Host (amazon.ca)"
+              placeholder="Host (amazon.ca — or paste a URL)"
               value={host}
               onChange={(e) => setHost(e.target.value)}
               className="font-mono text-sm flex-1 min-w-36"
