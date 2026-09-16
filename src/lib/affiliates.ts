@@ -5,7 +5,19 @@
  * NIP-78 event (kind 30078, d-tag `savedd:affiliate-rules`) whose content
  * is a JSON rule list:
  *
- *   { "version": 1, "rules": [{ "host": "amazon.ca", "param": "tag", "value": "savedd-21" }] }
+ *   { "version": 1, "rules": [
+ *       { "host": "amazon.ca", "mode": "param", "param": "tag", "value": "savedd-21" },
+ *       { "host": "ppq.ai", "mode": "redirect", "target": "https://ppq.ai/invite/949880ca" }
+ *   ] }
+ *
+ * Two tagging modes, because affiliate programs come in two shapes:
+ *   - `param`    — query-param tagging (Amazon `?tag=`): matched result URLs
+ *                  keep their page and gain/replace the parameter.
+ *   - `redirect` — referral-link services (PPQ `/invite/<code>`, nano-gpt
+ *                  `/r/<code>`): matched result URLs are replaced by the
+ *                  referral link itself, since the referral page sets the
+ *                  tracking cookie. `{url}` in the target is substituted
+ *                  with the (encoded) original link for prefix-style programs.
  *
  * Every client reads that event — author-filtered to the owner + the
  * owner-signed admin role list (the trust boundary, same as the moderation
@@ -33,25 +45,52 @@ export const AFFILIATES_D_TAG = 'savedd:affiliate-rules';
 export const AFFILIATES_T_TAG = 'savedd-affiliate-rules';
 
 export interface AffiliateRule {
-  /** Bare host to match, e.g. `amazon.ca` (also matches `www.amazon.ca` etc.). */
+  /** Bare host to match, e.g. `amazon.ca` or `ppq.ai` (also matches subdomains). */
   host: string;
-  /** Query parameter name, e.g. `tag`. */
-  param: string;
-  /** Affiliate code value, e.g. `savedd-21`. */
-  value: string;
+  /**
+   * Tagging mode:
+   *  - `param`    — append/replace a query parameter (Amazon: ?tag=code)
+   *  - `redirect` — replace the whole URL with a referral link
+   *                 (PPQ: https://ppq.ai/invite/<code>, nano-gpt: /r/<code>).
+   *                 The literal token `{url}` in target is substituted with
+   *                 the URL-encoded original link.
+   * Rules without `mode` but with param+value parse as `param` (back-compat).
+   */
+  mode: 'param' | 'redirect';
+  /** `param` mode: query parameter name, e.g. `tag`. */
+  param?: string;
+  /** `param` mode: affiliate code value, e.g. `savedd-21`. */
+  value?: string;
+  /** `redirect` mode: referral URL, e.g. `https://ppq.ai/invite/949880ca`. */
+  target?: string;
 }
 
 const HOST_RE = /^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/;
 const PARAM_RE = /^[A-Za-z0-9_-]{1,32}$/;
 // Affiliate codes are token-like; reject anything that could break a URL.
 const VALUE_RE = /^[A-Za-z0-9_.~-]{1,64}$/;
+const URL_PLACEHOLDER = '{url}';
+
+/** A redirect target: https URL, optionally containing one {url} placeholder. */
+export function isValidRedirectTarget(target: string): boolean {
+  const withoutPlaceholder = target.split(URL_PLACEHOLDER).join('https://example.com/x');
+  try {
+    const u = new URL(withoutPlaceholder);
+    return u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 export function isValidAffiliateRule(rule: AffiliateRule): boolean {
-  return (
-    HOST_RE.test(rule.host)
-    && PARAM_RE.test(rule.param)
-    && VALUE_RE.test(rule.value)
-  );
+  if (!HOST_RE.test(rule.host)) return false;
+  if (rule.mode === 'param') {
+    return !!rule.param && PARAM_RE.test(rule.param) && !!rule.value && VALUE_RE.test(rule.value);
+  }
+  if (rule.mode === 'redirect') {
+    return !!rule.target && isValidRedirectTarget(rule.target);
+  }
+  return false;
 }
 
 /**
@@ -74,12 +113,18 @@ export function parseAffiliateRules(event: NostrEvent, trustedAuthors: Set<strin
     const valid: AffiliateRule[] = [];
     for (const r of rules) {
       if (!r || typeof r !== 'object') continue;
-      const { host, param, value } = r as Record<string, unknown>;
-      if (typeof host !== 'string' || typeof param !== 'string' || typeof value !== 'string') continue;
+      const raw = r as Record<string, unknown>;
+      if (typeof raw.host !== 'string') continue;
+
+      // Back-compat: rules saved before `mode` existed are param-mode.
+      const mode: AffiliateRule['mode'] = raw.mode === 'redirect' ? 'redirect' : 'param';
+
       const rule: AffiliateRule = {
-        host: host.trim().toLowerCase().replace(/\.$/, ''),
-        param: param.trim(),
-        value: value.trim(),
+        host: raw.host.trim().toLowerCase().replace(/\.$/, ''),
+        mode,
+        param: typeof raw.param === 'string' ? raw.param.trim() : undefined,
+        value: typeof raw.value === 'string' ? raw.value.trim() : undefined,
+        target: typeof raw.target === 'string' ? raw.target.trim() : undefined,
       };
       if (isValidAffiliateRule(rule)) valid.push(rule);
     }
@@ -108,8 +153,9 @@ export function buildAffiliateRulesEvent(rules: AffiliateRule[]): {
 
 /**
  * Apply the first matching rule to a URL. Returns the input unchanged when
- * nothing matches or the URL isn't http(s). Values go through
- * URLSearchParams, so encoding is always safe.
+ * nothing matches or the URL isn't http(s). Param values go through
+ * URLSearchParams, so encoding is always safe; redirect targets are
+ * validated https URLs (with optional {url} substitution).
  */
 export function applyAffiliateRules(url: string, rules: AffiliateRule[]): string {
   if (rules.length === 0) return url;
@@ -124,10 +170,16 @@ export function applyAffiliateRules(url: string, rules: AffiliateRule[]): string
 
   const hostname = u.hostname.toLowerCase().replace(/\.$/, '');
   for (const rule of rules) {
-    if (hostname === rule.host || hostname.endsWith(`.${rule.host}`)) {
-      u.searchParams.set(rule.param, rule.value);
-      return u.toString();
+    if (hostname !== rule.host && !hostname.endsWith(`.${rule.host}`)) continue;
+
+    if (rule.mode === 'redirect') {
+      // Replace the destination with the referral link — that's how
+      // cookie-based programs (PPQ invite, nano-gpt /r/) attribute.
+      return rule.target!.split(URL_PLACEHOLDER).join(encodeURIComponent(url));
     }
+
+    u.searchParams.set(rule.param!, rule.value!);
+    return u.toString();
   }
   return url;
 }

@@ -1002,8 +1002,10 @@ function AffiliatesTab() {
   // Local draft — null until the published rules have loaded.
   const [draft, setDraft] = useState<AffiliateRule[] | null>(null);
   const [host, setHost] = useState('');
+  const [mode, setMode] = useState<AffiliateRule['mode']>('param');
   const [param, setParam] = useState('');
   const [value, setValue] = useState('');
+  const [target, setTarget] = useState('');
   const [testUrl, setTestUrl] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -1013,32 +1015,35 @@ function AffiliatesTab() {
   }, [draft, isLoading, rules]);
 
   const loaded = draft !== null;
-
-  const current = draft ?? [];
   const dirty = loaded && JSON.stringify(current) !== JSON.stringify(rules);
 
   const handleAdd = () => {
     const rule: AffiliateRule = {
       host: host.trim().toLowerCase().replace(/^www\./, '').replace(/\.$/, ''),
-      param: param.trim(),
-      value: value.trim(),
+      mode,
+      param: mode === 'param' ? param.trim() : undefined,
+      value: mode === 'param' ? value.trim() : undefined,
+      target: mode === 'redirect' ? target.trim() : undefined,
     };
     if (!isValidAffiliateRule(rule)) {
       toast({
         title: 'Invalid rule',
-        description: 'Host like amazon.ca (no scheme), param like tag, code like savedd-21 (letters, numbers, _ - . ~).',
+        description: mode === 'param'
+          ? 'Host like amazon.ca (no scheme), param like tag, code like savedd-21 (letters, numbers, _ - . ~).'
+          : 'Referral link must be a full https URL, e.g. https://ppq.ai/invite/your-code.',
         variant: 'destructive',
       });
       return;
     }
-    if (current.some((r) => r.host === rule.host && r.param === rule.param)) {
-      toast({ title: 'Duplicate rule', description: 'That host + parameter already exists.', variant: 'destructive' });
+    if (current.some((r) => r.host === rule.host)) {
+      toast({ title: 'Duplicate host', description: 'That host already has a rule — remove it first.', variant: 'destructive' });
       return;
     }
     setDraft([...current, rule]);
     setHost('');
     setParam('');
     setValue('');
+    setTarget('');
   };
 
   const handlePublish = async () => {
@@ -1060,28 +1065,41 @@ function AffiliatesTab() {
       <Card className="border-primary/20">
         <CardContent className="py-4 space-y-3">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            When a result URL matches a rule&apos;s host, the affiliate parameter is
-            attached automatically — for every user, in results, AI citations, and
-            bookmarks. Example: <span className="font-mono">amazon.ca</span> +{' '}
-            <span className="font-mono">tag</span> + <span className="font-mono">your-code-21</span>{' '}
-            turns <span className="font-mono">https://amazon.ca/item</span> into{' '}
-            <span className="font-mono">https://amazon.ca/item?tag=your-code-21</span>.
+            When a result URL matches a rule&apos;s host, it is tagged automatically —
+            for every user, in results, AI citations, and bookmarks. Two shapes of
+            program are supported:
           </p>
+          <ul className="text-xs text-muted-foreground leading-relaxed list-disc pl-4 space-y-1">
+            <li>
+              <span className="font-medium text-foreground">Query param</span> — the page URL
+              gains a parameter: <span className="font-mono">amazon.ca</span> +{' '}
+              <span className="font-mono">tag</span> + <span className="font-mono">your-code-21</span>{' '}
+              → <span className="font-mono">amazon.ca/item?tag=your-code-21</span>. An existing
+              parameter on the URL is replaced with our code.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Referral link</span> — the click goes to
+              your invite URL instead (cookie-based programs):{' '}
+              <span className="font-mono">ppq.ai</span> → <span className="font-mono">https://ppq.ai/invite/your-code</span>,{' '}
+              <span className="font-mono">nano-gpt.com</span> → <span className="font-mono">https://nano-gpt.com/r/your-code</span>.
+              The token <span className="font-mono">{'{url}'}</span> in the link is replaced with the
+              original (encoded) URL for prefix-style programs.
+            </li>
+          </ul>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            The rule list is one owner-signed NIP-78 event (kind 30078,{' '}
+            The rule list is one owner/admin-signed NIP-78 event (kind 30078,{' '}
             <span className="font-mono">savedd:affiliate-rules</span>) — public by design,
             since affiliate codes are visible in tagged URLs anyway. Subdomains match
             (a rule for <span className="font-mono">amazon.ca</span> covers{' '}
-            <span className="font-mono">www.amazon.ca</span>). An existing parameter on
-            the URL is replaced with our code.
+            <span className="font-mono">www.amazon.ca</span>).
           </p>
         </CardContent>
       </Card>
 
       {/* Add rule */}
       <Card className="border-primary/20">
-        <CardContent className="py-4">
-          <div className="flex gap-2 flex-wrap">
+        <CardContent className="py-4 space-y-3">
+          <div className="flex gap-2 flex-wrap items-center">
             <Input
               placeholder="Host (amazon.ca)"
               value={host}
@@ -1089,22 +1107,50 @@ function AffiliatesTab() {
               className="font-mono text-sm flex-1 min-w-36"
               aria-label="Host"
             />
+            <select
+              value={mode}
+              onChange={(e) => setMode(e.target.value as AffiliateRule['mode'])}
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring dark:bg-input/30"
+              aria-label="Rule type"
+            >
+              <option value="param">Query param</option>
+              <option value="redirect">Referral link</option>
+            </select>
+          </div>
+          {mode === 'param' ? (
+            <div className="flex gap-2 flex-wrap">
+              <Input
+                placeholder="Param (tag)"
+                value={param}
+                onChange={(e) => setParam(e.target.value)}
+                className="font-mono text-sm w-28"
+                aria-label="Query parameter"
+              />
+              <Input
+                placeholder="Code (savedd-21)"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                className="font-mono text-sm flex-1 min-w-32"
+                aria-label="Affiliate code"
+              />
+            </div>
+          ) : (
             <Input
-              placeholder="Param (tag)"
-              value={param}
-              onChange={(e) => setParam(e.target.value)}
-              className="font-mono text-sm w-28"
-              aria-label="Query parameter"
-            />
-            <Input
-              placeholder="Code (savedd-21)"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
+              placeholder="Referral link (https://ppq.ai/invite/your-code)"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              className="font-mono text-sm flex-1 min-w-32"
-              aria-label="Affiliate code"
+              className="font-mono text-sm"
+              aria-label="Referral link"
             />
-            <Button onClick={handleAdd} disabled={!host.trim() || !param.trim() || !value.trim()} className="shrink-0">
+          )}
+          <div>
+            <Button
+              onClick={handleAdd}
+              disabled={!host.trim() || (mode === 'param' ? !param.trim() || !value.trim() : !target.trim())}
+              className="shrink-0"
+            >
               <Plus className="w-4 h-4 mr-1.5" />
               Add rule
             </Button>
@@ -1122,28 +1168,32 @@ function AffiliatesTab() {
         <Card className="border-dashed">
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
             No affiliate rules yet. Add one above — e.g. host{' '}
-            <span className="font-mono">amazon.ca</span>, param{' '}
-            <span className="font-mono">tag</span>, your Associates code.
+            <span className="font-mono">amazon.ca</span> with param{' '}
+            <span className="font-mono">tag</span> + your Associates code, or host{' '}
+            <span className="font-mono">ppq.ai</span> with your invite link.
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
           {current.map((rule) => (
             <div
-              key={`${rule.host}:${rule.param}`}
+              key={rule.host}
               className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/60 bg-card"
             >
               <Tag className="w-4 h-4 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-mono text-sm truncate">{rule.host}</p>
                 <p className="font-mono text-[11px] text-muted-foreground truncate">
-                  ?{rule.param}={rule.value}
+                  {rule.mode === 'redirect' ? `→ ${rule.target}` : `?${rule.param}=${rule.value}`}
                 </p>
               </div>
+              <Badge variant="outline" className="text-[10px] shrink-0 border-border text-muted-foreground">
+                {rule.mode === 'redirect' ? 'Referral link' : 'Query param'}
+              </Badge>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setDraft(current.filter((r) => !(r.host === rule.host && r.param === rule.param)))}
+                onClick={() => setDraft(current.filter((r) => r.host !== rule.host))}
                 className="text-muted-foreground hover:text-destructive shrink-0"
                 aria-label={`Remove rule for ${rule.host}`}
               >
