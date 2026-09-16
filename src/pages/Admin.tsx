@@ -146,7 +146,7 @@ export default function Admin() {
 /* ─── Tabs ─── */
 
 function AdminTabs() {
-  const { canManageRoles } = useAdminAccess();
+  const { canManageRoles, isAdmin } = useAdminAccess();
 
   return (
     <Tabs defaultValue="stats">
@@ -156,7 +156,7 @@ function AdminTabs() {
         <TabsTrigger value="moderation" className="gap-1.5"><EyeOff className="w-3.5 h-3.5" />Moderation</TabsTrigger>
         <TabsTrigger value="filter" className="gap-1.5"><SearchCheck className="w-3.5 h-3.5" />Filter test</TabsTrigger>
         <TabsTrigger value="ai" className="gap-1.5"><Sparkles className="w-3.5 h-3.5" />AI</TabsTrigger>
-        {canManageRoles && (
+        {isAdmin && (
           <TabsTrigger value="affiliates" className="gap-1.5"><Tag className="w-3.5 h-3.5" />Affiliates</TabsTrigger>
         )}
         {canManageRoles && (
@@ -168,7 +168,7 @@ function AdminTabs() {
       <TabsContent value="moderation"><ModerationTab /></TabsContent>
       <TabsContent value="filter"><FilterTab /></TabsContent>
       <TabsContent value="ai"><AITab /></TabsContent>
-      {canManageRoles && <TabsContent value="affiliates"><AffiliatesTab /></TabsContent>}
+      {isAdmin && <TabsContent value="affiliates"><AffiliatesTab /></TabsContent>}
       {canManageRoles && <TabsContent value="roles"><RolesTab /></TabsContent>}
     </Tabs>
   );
@@ -1185,9 +1185,11 @@ function AffiliatesTab() {
       </Card>
 
       <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
-        Owner-only, takes effect for all users as soon as relays propagate the event.
-        Remember affiliate-program disclosure duties (e.g. Amazon Associates requires a
-        visible earnings disclosure on the site — there is one on the About page).
+        Owner and admins can edit; the latest signed version wins and takes effect for
+        all users as soon as relays propagate the event. If an admin is removed from the
+        Roles tab, their version stops being trusted immediately. Remember affiliate-program
+        disclosure duties (e.g. Amazon Associates requires a visible earnings disclosure
+        on the site — there is one on the About page).
       </p>
     </div>
   );

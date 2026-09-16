@@ -1,14 +1,16 @@
 /**
  * Affiliate link tagging — owner-managed domain → affiliate-code rules.
  *
- * Model: the owner publishes ONE addressable NIP-78 event (kind 30078,
- * d-tag `savedd:affiliate-rules`) whose content is a JSON rule list:
+ * Model: the owner (or an owner-listed admin) publishes ONE addressable
+ * NIP-78 event (kind 30078, d-tag `savedd:affiliate-rules`) whose content
+ * is a JSON rule list:
  *
  *   { "version": 1, "rules": [{ "host": "amazon.ca", "param": "tag", "value": "savedd-21" }] }
  *
- * Every client reads that event (author-filtered to the OWNER pubkey — the
- * trust boundary, same as the moderation lists) and rewrites matching
- * outbound result URLs: `https://www.amazon.ca/item/…` becomes
+ * Every client reads that event — author-filtered to the owner + the
+ * owner-signed admin role list (the trust boundary, same as the moderation
+ * lists; last-write-wins across the team) — and rewrites matching outbound
+ * result URLs: `https://www.amazon.ca/item/…` becomes
  * `https://www.amazon.ca/item/…?tag=savedd-21`.
  *
  * Nothing here is secret by design — affiliate codes are visible in the
@@ -20,8 +22,6 @@
  * REPLACED (that is the point — our code should win over a scraped one).
  */
 import type { NostrEvent } from '@nostrify/nostrify';
-
-import { OWNER_PUBKEY } from '@/lib/moderation';
 
 /** NIP-78 app-specific data kind (already used for submissions/stakes). */
 export const AFFILIATES_KIND = 30078;
@@ -56,12 +56,13 @@ export function isValidAffiliateRule(rule: AffiliateRule): boolean {
 
 /**
  * Parse an affiliate-config event into a validated rule list.
- * The author filter is the trust boundary — callers must query with
- * `authors: [OWNER_PUBKEY]`; the pubkey check here is defense-in-depth.
+ * The author filter is the trust boundary — callers must only pass events
+ * whose pubkey is the owner or an owner-listed admin (`trustedAuthors`);
+ * the membership check here is defense-in-depth.
  */
-export function parseAffiliateRules(event: NostrEvent): AffiliateRule[] {
+export function parseAffiliateRules(event: NostrEvent, trustedAuthors: Set<string>): AffiliateRule[] {
   if (event.kind !== AFFILIATES_KIND) return [];
-  if (event.pubkey !== OWNER_PUBKEY) return [];
+  if (!trustedAuthors.has(event.pubkey)) return [];
   if (event.tags.find(([n]) => n === 'd')?.[1] !== AFFILIATES_D_TAG) return [];
 
   try {
