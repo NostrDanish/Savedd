@@ -6,6 +6,7 @@ import Index from "./pages/Index";
 import Policy from "./pages/Policy";
 import About from "./pages/About";
 import Bookmarks from "./pages/Bookmarks";
+import Partners from "./pages/Partners";
 import Settings from "./pages/Settings";
 import Explore from "./pages/Explore";
 import Admin from "./pages/Admin";
@@ -34,6 +35,7 @@ export function AppRouter() {
         <Route path="/policy" element={<Policy />} />
         <Route path="/about" element={<About />} />
         <Route path="/bookmarks" element={<Bookmarks />} />
+        <Route path="/partners" element={<Partners />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/explore" element={<Explore />} />
         {/* Ecosystem hub */}

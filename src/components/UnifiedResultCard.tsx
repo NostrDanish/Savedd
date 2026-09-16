@@ -25,6 +25,7 @@ import { useWebBookmarks, bookmarkDForUrl } from '@/hooks/useWebBookmarks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAffiliateRules } from '@/hooks/useAffiliates';
 import { applyAffiliateRules } from '@/lib/affiliates';
+import { trackAffiliateClick } from '@/hooks/useReferrals';
 import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import type { SearchResult } from '@/lib/providers/types';
 import { cn } from '@/lib/utils';
@@ -307,7 +308,8 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
   // the current origin and hard-load it in a new tab — broken UX.)
   // External URLs are hostile data — sanitize before they become a href.
   const isInternal = result.url.startsWith('/');
-  const safeUrl = isInternal ? '' : sanitizeResultUrl(applyAffiliateRules(result.url, affiliateRules));
+  const taggedUrl = applyAffiliateRules(result.url, affiliateRules);
+  const safeUrl = isInternal ? '' : sanitizeResultUrl(taggedUrl);
 
   const card = (
     <div className={cn(
@@ -429,6 +431,7 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
           target="_blank"
           rel="noopener noreferrer"
           className={cn('block group', className)}
+          onClick={() => trackAffiliateClick(result.url, taggedUrl)}
         >
           {card}
         </a>

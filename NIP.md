@@ -26,6 +26,8 @@ formats. Current support:
 | NIP-92 | Media attachments (`imeta`) | 1 | ✅ read (inline thumbnails in results) |
 | NIP-94 | File metadata | 1063 | ✅ read (file results) |
 | NIP-B0 | Web bookmarks | 39701 | ✅ read (Community provider — user-curated links) + ✅ write (logged-in users save/remove bookmarks on results and manage them at `/bookmarks`) |
+| — | Referral ping (custom) | 34967 | ✅ write — one addressable event per device per partner (`d`/`p` = partner pubkey) on first `?ref=` arrival; read on `/partners` |
+| — | Affiliate click (custom) | 6079 | ✅ write — one event per tagged-link click from a referred device (`p` = partner, `host` = merchant); read on `/partners` |
 | NIP-C0 | Code snippets | 1337 | ✅ read (Code tab, language badges) |
 | BUD-03 | Blossom user server list | 10063 | ✅ read + write (uploads) |
 | SIP-01 | Search Index Protocol | 39697 | ✅ read + write ([spec](docs/SIP-01.md)) |

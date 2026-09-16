@@ -14,6 +14,7 @@ import type { AIEvidenceItem, AIAnswer } from '@/lib/ai/types';
 import { sanitizeUrl } from '@/lib/sanitizeUrl';
 import { useAffiliateRules } from '@/hooks/useAffiliates';
 import { applyAffiliateRules, type AffiliateRule } from '@/lib/affiliates';
+import { trackAffiliateClick } from '@/hooks/useReferrals';
 import { cn } from '@/lib/utils';
 
 interface AIAnswerCardProps {
@@ -45,6 +46,7 @@ function renderWithCitations(text: string, evidence: AIEvidenceItem[], affiliate
         target="_blank"
         rel="noopener noreferrer"
         title={item.title}
+        onClick={() => trackAffiliateClick(item.url, applyAffiliateRules(item.url, affiliateRules))}
         className="inline-flex items-center text-[10px] font-mono text-primary bg-primary/10 border border-primary/20 rounded px-1 mx-0.5 align-super hover:bg-primary/20 transition-colors"
       >
         {n}
@@ -130,6 +132,7 @@ export function AIAnswerCard({ answer, evidence, isLoading, error, className }: 
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackAffiliateClick(item.url, applyAffiliateRules(item.url, affiliateRules))}
                 className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors max-w-full"
               >
                 <span className="font-mono text-primary">[{item.n}]</span>
