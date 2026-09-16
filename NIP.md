@@ -22,7 +22,7 @@ formats. Current support:
 | NIP-56 | Reporting | 1984 | ✅ write (Policy page abuse reports, with NIP-32 labels) |
 | NIP-65 | Relay list metadata | 10002 | ✅ read + write (Settings → Your Relays) |
 | NIP-77 | Negentropy sync | — | 📖 documented in SIP-01 §15 (relay-to-relay, nothing client-side) |
-| NIP-78 | App-specific data | 30078 | ✅ submissions / stakes / term signals (read + write) · legacy cache (read-only, see below) |
+| NIP-78 | App-specific data | 30078 | ✅ submissions / stakes / term signals (read + write) · legacy cache (read-only, see below) · `savedd:affiliate-rules` — owner-signed affiliate domain→code config (read all, write owner) |
 | NIP-92 | Media attachments (`imeta`) | 1 | ✅ read (inline thumbnails in results) |
 | NIP-94 | File metadata | 1063 | ✅ read (file results) |
 | NIP-B0 | Web bookmarks | 39701 | ✅ read (Community provider — user-curated links) + ✅ write (logged-in users save/remove bookmarks on results and manage them at `/bookmarks`) |

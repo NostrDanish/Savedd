@@ -23,6 +23,8 @@ import { VoteButtons } from '@/components/VoteButtons';
 import { sanitizeUrl, sanitizeResultUrl } from '@/lib/sanitizeUrl';
 import { useWebBookmarks, bookmarkDForUrl } from '@/hooks/useWebBookmarks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAffiliateRules } from '@/hooks/useAffiliates';
+import { applyAffiliateRules } from '@/lib/affiliates';
 import { ENGINE_PROFILE } from '@/lib/engine/profile';
 import type { SearchResult } from '@/lib/providers/types';
 import { cn } from '@/lib/utils';
@@ -295,6 +297,9 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
   const bookmarks = useWebBookmarks();
   const bookmarkD = bookmarkDForUrl(result.url);
   const bookmarked = bookmarkD !== null && bookmarks.isBookmarked(result.url);
+  // Owner-managed affiliate tagging (e.g. amazon.ca → ?tag=code). Applied
+  // before sanitization so the final href is always a clean https URL.
+  const { rules: affiliateRules } = useAffiliateRules();
 
   // Nostr-native providers (wiki/git pools) link to internal /nip19 routes —
   // those navigate client-side via the router. Everything else opens in a
@@ -302,7 +307,7 @@ function ExternalResultCard({ result, className }: { result: SearchResult; class
   // the current origin and hard-load it in a new tab — broken UX.)
   // External URLs are hostile data — sanitize before they become a href.
   const isInternal = result.url.startsWith('/');
-  const safeUrl = isInternal ? '' : sanitizeResultUrl(result.url);
+  const safeUrl = isInternal ? '' : sanitizeResultUrl(applyAffiliateRules(result.url, affiliateRules));
 
   const card = (
     <div className={cn(

@@ -16,7 +16,7 @@
  * (author filter = the trust boundary). Un-hiding publishes a NIP-09
  * deletion of the label.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSeoMeta } from '@unhead/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ import {
   ShieldCheck, BarChart3, Flag, EyeOff, SearchCheck, Database,
   FileText, Gem, Inbox, Globe, Zap, Clock, ExternalLink,
   Loader2, Eye, RotateCcw, Users, Crown, UserCog, Plus, Trash2,
-  Sparkles, Lock, CheckCircle2, XCircle, KeyRound,
+  Sparkles, Lock, CheckCircle2, XCircle, KeyRound, Tag,
 } from 'lucide-react';
 
 import { Layout } from '@/components/Layout';
@@ -60,6 +60,8 @@ import {
   useRoleActions,
 } from '@/hooks/useModeration';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { useAffiliateRules, useAffiliateActions } from '@/hooks/useAffiliates';
+import { applyAffiliateRules, isValidAffiliateRule, type AffiliateRule } from '@/lib/affiliates';
 import {
   OWNER_PUBKEY,
   ADMIN_ROLES_D_TAG,
@@ -155,6 +157,9 @@ function AdminTabs() {
         <TabsTrigger value="filter" className="gap-1.5"><SearchCheck className="w-3.5 h-3.5" />Filter test</TabsTrigger>
         <TabsTrigger value="ai" className="gap-1.5"><Sparkles className="w-3.5 h-3.5" />AI</TabsTrigger>
         {canManageRoles && (
+          <TabsTrigger value="affiliates" className="gap-1.5"><Tag className="w-3.5 h-3.5" />Affiliates</TabsTrigger>
+        )}
+        {canManageRoles && (
           <TabsTrigger value="roles" className="gap-1.5"><Users className="w-3.5 h-3.5" />Roles</TabsTrigger>
         )}
       </TabsList>
@@ -163,6 +168,7 @@ function AdminTabs() {
       <TabsContent value="moderation"><ModerationTab /></TabsContent>
       <TabsContent value="filter"><FilterTab /></TabsContent>
       <TabsContent value="ai"><AITab /></TabsContent>
+      {canManageRoles && <TabsContent value="affiliates"><AffiliatesTab /></TabsContent>}
       {canManageRoles && <TabsContent value="roles"><RolesTab /></TabsContent>}
     </Tabs>
   );
@@ -981,6 +987,207 @@ function RolesTab() {
       <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
         Admins and moderators see this console in their account menu and can hide/unhide
         results. Only the owner manages roles.
+      </p>
+    </div>
+  );
+}
+
+/* ─── Affiliates (owner-managed link tagging) ─── */
+
+function AffiliatesTab() {
+  const { rules, isLoading } = useAffiliateRules();
+  const { updateRules } = useAffiliateActions();
+  const { toast } = useToast();
+
+  // Local draft — null until the published rules have loaded.
+  const [draft, setDraft] = useState<AffiliateRule[] | null>(null);
+  const [host, setHost] = useState('');
+  const [param, setParam] = useState('');
+  const [value, setValue] = useState('');
+  const [testUrl, setTestUrl] = useState('');
+  const [pending, setPending] = useState(false);
+
+  // One-time sync when the published rules land from the relays.
+  useEffect(() => {
+    if (draft === null && !isLoading) setDraft(rules);
+  }, [draft, isLoading, rules]);
+
+  const loaded = draft !== null;
+
+  const current = draft ?? [];
+  const dirty = loaded && JSON.stringify(current) !== JSON.stringify(rules);
+
+  const handleAdd = () => {
+    const rule: AffiliateRule = {
+      host: host.trim().toLowerCase().replace(/^www\./, '').replace(/\.$/, ''),
+      param: param.trim(),
+      value: value.trim(),
+    };
+    if (!isValidAffiliateRule(rule)) {
+      toast({
+        title: 'Invalid rule',
+        description: 'Host like amazon.ca (no scheme), param like tag, code like savedd-21 (letters, numbers, _ - . ~).',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (current.some((r) => r.host === rule.host && r.param === rule.param)) {
+      toast({ title: 'Duplicate rule', description: 'That host + parameter already exists.', variant: 'destructive' });
+      return;
+    }
+    setDraft([...current, rule]);
+    setHost('');
+    setParam('');
+    setValue('');
+  };
+
+  const handlePublish = async () => {
+    setPending(true);
+    try {
+      await updateRules(current);
+      toast({ title: 'Affiliate rules published', description: `${current.length} rule(s) live for all users within a minute.` });
+    } catch (err) {
+      toast({ title: 'Publish failed', description: err instanceof Error ? err.message : 'Publish failed', variant: 'destructive' });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const taggedExample = testUrl.trim() ? applyAffiliateRules(testUrl.trim(), current) : '';
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-primary/20">
+        <CardContent className="py-4 space-y-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            When a result URL matches a rule&apos;s host, the affiliate parameter is
+            attached automatically — for every user, in results, AI citations, and
+            bookmarks. Example: <span className="font-mono">amazon.ca</span> +{' '}
+            <span className="font-mono">tag</span> + <span className="font-mono">your-code-21</span>{' '}
+            turns <span className="font-mono">https://amazon.ca/item</span> into{' '}
+            <span className="font-mono">https://amazon.ca/item?tag=your-code-21</span>.
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The rule list is one owner-signed NIP-78 event (kind 30078,{' '}
+            <span className="font-mono">savedd:affiliate-rules</span>) — public by design,
+            since affiliate codes are visible in tagged URLs anyway. Subdomains match
+            (a rule for <span className="font-mono">amazon.ca</span> covers{' '}
+            <span className="font-mono">www.amazon.ca</span>). An existing parameter on
+            the URL is replaced with our code.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Add rule */}
+      <Card className="border-primary/20">
+        <CardContent className="py-4">
+          <div className="flex gap-2 flex-wrap">
+            <Input
+              placeholder="Host (amazon.ca)"
+              value={host}
+              onChange={(e) => setHost(e.target.value)}
+              className="font-mono text-sm flex-1 min-w-36"
+              aria-label="Host"
+            />
+            <Input
+              placeholder="Param (tag)"
+              value={param}
+              onChange={(e) => setParam(e.target.value)}
+              className="font-mono text-sm w-28"
+              aria-label="Query parameter"
+            />
+            <Input
+              placeholder="Code (savedd-21)"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+              className="font-mono text-sm flex-1 min-w-32"
+              aria-label="Affiliate code"
+            />
+            <Button onClick={handleAdd} disabled={!host.trim() || !param.trim() || !value.trim()} className="shrink-0">
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add rule
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current rules */}
+      {!loaded ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : current.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            No affiliate rules yet. Add one above — e.g. host{' '}
+            <span className="font-mono">amazon.ca</span>, param{' '}
+            <span className="font-mono">tag</span>, your Associates code.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {current.map((rule) => (
+            <div
+              key={`${rule.host}:${rule.param}`}
+              className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/60 bg-card"
+            >
+              <Tag className="w-4 h-4 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-mono text-sm truncate">{rule.host}</p>
+                <p className="font-mono text-[11px] text-muted-foreground truncate">
+                  ?{rule.param}={rule.value}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDraft(current.filter((r) => !(r.host === rule.host && r.param === rule.param)))}
+                className="text-muted-foreground hover:text-destructive shrink-0"
+                aria-label={`Remove rule for ${rule.host}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Test + publish */}
+      <Card>
+        <CardContent className="py-4 space-y-3">
+          <div>
+            <p className="text-xs font-medium mb-1.5">Test the rules</p>
+            <Input
+              placeholder="https://www.amazon.ca/some-product"
+              value={testUrl}
+              onChange={(e) => setTestUrl(e.target.value)}
+              className="font-mono text-sm"
+              aria-label="Test URL"
+            />
+            {taggedExample && (
+              <p className="font-mono text-[11px] text-primary break-all mt-2">{taggedExample}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            <Button onClick={() => void handlePublish()} disabled={pending || !dirty}>
+              {pending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+              Publish rules
+            </Button>
+            {dirty && (
+              <Button variant="ghost" size="sm" onClick={() => setDraft(rules)}>
+                Discard changes
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+        Owner-only, takes effect for all users as soon as relays propagate the event.
+        Remember affiliate-program disclosure duties (e.g. Amazon Associates requires a
+        visible earnings disclosure on the site — there is one on the About page).
       </p>
     </div>
   );

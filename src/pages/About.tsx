@@ -109,6 +109,16 @@ export default function About() {
           </p>
         </section>
 
+        <section className="mb-10">
+          <h2 className="text-xl font-display font-semibold mb-3">Affiliate links</h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Some outbound links on SAVEDD are affiliate links. If you buy through them,
+            the merchant may pay SAVEDD a commission at no extra cost to you. That income
+            keeps the engine running. As an Amazon Associate, SAVEDD earns from qualifying
+            purchases.
+          </p>
+        </section>
+
         <section className="mb-4">
           <h2 className="text-xl font-display font-semibold mb-3">Open search infrastructure</h2>
           <p className="text-muted-foreground leading-relaxed mb-3">
