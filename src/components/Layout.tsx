@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Settings, PlusCircle, Menu, Bookmark } from 'lucide-react';
+import { PlusCircle, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { LoginArea } from '@/components/auth/LoginArea';
@@ -20,7 +20,6 @@ const engine = ENGINE_PROFILE;
 
 export function Layout({ children, minimal = false }: LayoutProps) {
   const location = useLocation();
-  const isHome = location.pathname === '/';
   const [submitOpen, setSubmitOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { user } = useCurrentUser();
@@ -57,49 +56,9 @@ export function Layout({ children, minimal = false }: LayoutProps) {
             </span>
           </Link>
 
-          {/* Site menu — everything lives in this one cluster, on desktop
-              (text links) and mobile (sheet). No floating orphan links. */}
+          {/* Site menu — one menu on every screen size: account + hamburger
+              opening the nav sheet. No orphan links, no desktop-only cluster. */}
           <nav className="flex items-center gap-1" aria-label="Site">
-            {engine.ui.navLinks.map((link) => (
-              <Button
-                key={link.to}
-                variant="ghost"
-                size="sm"
-                asChild
-                className={cn(
-                  'hidden sm:inline-flex text-muted-foreground hover:text-foreground',
-                  location.pathname.startsWith(link.to) && 'text-foreground bg-accent/50',
-                )}
-              >
-                <Link to={link.to}>{link.label}</Link>
-              </Button>
-            ))}
-
-            {showBookmarks && (
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                className={cn(
-                  'hidden sm:inline-flex text-muted-foreground hover:text-foreground',
-                  location.pathname.startsWith('/bookmarks') && 'text-foreground bg-accent/50',
-                )}
-              >
-                <Link to="/bookmarks">
-                  <Bookmark className="w-4 h-4 mr-1.5" />
-                  Bookmarks
-                </Link>
-              </Button>
-            )}
-
-            {!isHome && (
-              <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex text-muted-foreground hover:text-foreground">
-                <Link to="/">
-                  <Search className="w-4 h-4 mr-1.5" />
-                  Search
-                </Link>
-              </Button>
-            )}
             {engine.ui.showSubmit && (
               <Button
                 variant="ghost"
@@ -112,16 +71,6 @@ export function Layout({ children, minimal = false }: LayoutProps) {
                 <span className="hidden sm:inline">Submit</span>
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            >
-              <Link to="/settings" aria-label="Settings">
-                <Settings className="w-4 h-4" />
-              </Link>
-            </Button>
 
             {engine.ui.showLogin && <LoginArea className="max-w-48" />}
 
@@ -130,7 +79,7 @@ export function Layout({ children, minimal = false }: LayoutProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 sm:hidden text-muted-foreground hover:text-foreground"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   aria-label="Open navigation menu"
                 >
                   <Menu className="w-5 h-5" />

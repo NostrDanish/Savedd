@@ -64,10 +64,10 @@ const Partners = () => {
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 border border-primary/20">
             <Handshake className="w-5 h-5 text-primary" />
           </div>
-          <h1 className="text-3xl font-display font-semibold tracking-tight">Partners</h1>
+          <h1 className="text-3xl font-display font-semibold tracking-tight">Invite friends</h1>
         </div>
         <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
-          Share SAVEDD with your tracking link. You get credit for the people you bring
+          Share SAVEDD with your invite link. You get credit for the friends you bring
           and the affiliate clicks they generate — and SAVEDD shares 50% of the
           attributable affiliate commissions with you.
         </p>
@@ -77,7 +77,7 @@ const Partners = () => {
             <CardContent className="py-12 px-8 text-center space-y-4">
               <Handshake className="w-8 h-8 mx-auto text-muted-foreground/40" />
               <p className="text-muted-foreground max-w-sm mx-auto text-sm">
-                Log in with your Nostr key to get your tracking link and see your stats.
+                Log in with your Nostr key to get your invite link and see your stats.
                 No account creation, no email — your key is your account.
               </p>
               <LoginArea className="max-w-60 mx-auto" />
@@ -97,7 +97,7 @@ const Partners = () => {
             {/* Tracking link */}
             <Card className="border-primary/20">
               <CardContent className="py-4 space-y-2">
-                <p className="text-xs font-medium">Your tracking link</p>
+                <p className="text-xs font-medium">Your invite link</p>
                 <div className="flex gap-2">
                   <Input
                     readOnly
@@ -112,8 +112,8 @@ const Partners = () => {
                   </Button>
                 </div>
                 <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
-                  First touch wins: the first partner link someone ever follows is the one
-                  that sticks. Sharing your link again can never overwrite another partner.
+                  First touch wins: the first invite link someone ever follows is the one
+                  that sticks. Sharing your link again can never overwrite someone else&apos;s.
                 </p>
               </CardContent>
             </Card>

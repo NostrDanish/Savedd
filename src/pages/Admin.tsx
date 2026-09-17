@@ -61,7 +61,7 @@ import {
 } from '@/hooks/useModeration';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useAffiliateRules, useAffiliateActions } from '@/hooks/useAffiliates';
-import { applyAffiliateRules, isValidAffiliateRule, normalizeHostInput, type AffiliateRule } from '@/lib/affiliates';
+import { applyAffiliateRules, isValidAffiliateRule, normalizeHostInput, paramsFromUrl, type AffiliateRule } from '@/lib/affiliates';
 import {
   OWNER_PUBKEY,
   ADMIN_ROLES_D_TAG,
@@ -1003,8 +1003,9 @@ function AffiliatesTab() {
   const [draft, setDraft] = useState<AffiliateRule[] | null>(null);
   const [host, setHost] = useState('');
   const [mode, setMode] = useState<AffiliateRule['mode']>('param');
-  const [param, setParam] = useState('');
-  const [value, setValue] = useState('');
+  // Param mode: a row editor (eBay needs 5 params, Amazon needs 1).
+  const [paramRows, setParamRows] = useState<{ k: string; v: string }[]>([{ k: '', v: '' }]);
+  const [importUrl, setImportUrl] = useState('');
   const [target, setTarget] = useState('');
   const [testUrl, setTestUrl] = useState('');
   const [pending, setPending] = useState(false);
@@ -1018,20 +1019,42 @@ function AffiliatesTab() {
   const current = draft ?? [];
   const dirty = loaded && JSON.stringify(current) !== JSON.stringify(rules);
 
+  /** Paste a full affiliate URL → auto-fill host + every query param. */
+  const handleImport = () => {
+    const parsed = paramsFromUrl(importUrl);
+    if (!parsed) {
+      toast({ title: 'Not a URL', description: 'Paste a full affiliate link, e.g. https://www.ebay.com/itm/…?mkcid=1&campid=…', variant: 'destructive' });
+      return;
+    }
+    setHost(parsed.host);
+    setMode('param');
+    const rows = Object.entries(parsed.params).map(([k, v]) => ({ k, v }));
+    setParamRows(rows.length > 0 ? rows : [{ k: '', v: '' }]);
+    setImportUrl('');
+  };
+
   const handleAdd = () => {
+    const params = mode === 'param'
+      ? Object.fromEntries(
+          paramRows
+            .map((r) => ({ k: r.k.trim(), v: r.v.trim() }))
+            .filter((r) => r.k && r.v)
+            .map((r) => [r.k, r.v]),
+        )
+      : undefined;
+
     const rule: AffiliateRule = {
       // Forgiving: pasting a full URL into the host field just works.
       host: normalizeHostInput(host),
       mode,
-      param: mode === 'param' ? param.trim() : undefined,
-      value: mode === 'param' ? value.trim() : undefined,
+      params,
       target: mode === 'redirect' ? target.trim() : undefined,
     };
     if (!isValidAffiliateRule(rule)) {
       toast({
         title: 'Invalid rule',
         description: mode === 'param'
-          ? 'Host like amazon.ca (no scheme), param like tag, code like savedd-21 (letters, numbers, _ - . ~).'
+          ? 'Need a valid host plus 1–10 parameters (names: letters/numbers/_/-; values: no spaces, &, ?, #).'
           : 'Referral link must be a full https URL, e.g. https://ppq.ai/invite/your-code.',
         variant: 'destructive',
       });
@@ -1043,8 +1066,7 @@ function AffiliatesTab() {
     }
     setDraft([...current, rule]);
     setHost('');
-    setParam('');
-    setValue('');
+    setParamRows([{ k: '', v: '' }]);
     setTarget('');
   };
 
@@ -1073,11 +1095,12 @@ function AffiliatesTab() {
           </p>
           <ul className="text-xs text-muted-foreground leading-relaxed list-disc pl-4 space-y-1">
             <li>
-              <span className="font-medium text-foreground">Query param</span> — the page URL
-              gains a parameter: <span className="font-mono">amazon.ca</span> +{' '}
-              <span className="font-mono">tag</span> + <span className="font-mono">your-code-21</span>{' '}
-              → <span className="font-mono">amazon.ca/item?tag=your-code-21</span>. An existing
-              parameter on the URL is replaced with our code.
+              <span className="font-medium text-foreground">Query params</span> — the page URL
+              gains your parameter(s): <span className="font-mono">amazon.ca</span> +{' '}
+              <span className="font-mono">tag=your-code-21</span>, or eBay&apos;s five-parameter
+              EPN set (<span className="font-mono">mkcid/mkrid/siteid/campid/customid</span>) in one
+              rule. Existing params with the same names are replaced with ours. Paste a full
+              affiliate URL into Auto-fill to skip the typing.
             </li>
             <li>
               <span className="font-medium text-foreground">Referral link</span> — the click goes to
@@ -1120,22 +1143,62 @@ function AffiliatesTab() {
             </select>
           </div>
           {mode === 'param' ? (
-            <div className="flex gap-2 flex-wrap">
-              <Input
-                placeholder="Param (tag)"
-                value={param}
-                onChange={(e) => setParam(e.target.value)}
-                className="font-mono text-sm w-28"
-                aria-label="Query parameter"
-              />
-              <Input
-                placeholder="Code (savedd-21)"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                className="font-mono text-sm flex-1 min-w-32"
-                aria-label="Affiliate code"
-              />
+            <div className="space-y-2">
+              {/* Auto-fill from a pasted affiliate URL (eBay EPN et al.) */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Paste a full affiliate URL to auto-fill…"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleImport()}
+                  className="font-mono text-xs"
+                  aria-label="Import from affiliate URL"
+                />
+                <Button variant="outline" size="sm" onClick={handleImport} disabled={!importUrl.trim()} className="shrink-0">
+                  Auto-fill
+                </Button>
+              </div>
+              {paramRows.map((row, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <Input
+                    placeholder={i === 0 ? 'Param (tag)' : 'Param'}
+                    value={row.k}
+                    onChange={(e) => setParamRows(paramRows.map((r, j) => (j === i ? { ...r, k: e.target.value } : r)))}
+                    className="font-mono text-sm w-32"
+                    aria-label={`Parameter ${i + 1} name`}
+                  />
+                  <Input
+                    placeholder={i === 0 ? 'Code (savedd-21)' : 'Value'}
+                    value={row.v}
+                    onChange={(e) => setParamRows(paramRows.map((r, j) => (j === i ? { ...r, v: e.target.value } : r)))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                    className="font-mono text-sm flex-1 min-w-28"
+                    aria-label={`Parameter ${i + 1} value`}
+                  />
+                  {paramRows.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setParamRows(paramRows.filter((_, j) => j !== i))}
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label={`Remove parameter ${i + 1}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {paramRows.length < 10 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setParamRows([...paramRows, { k: '', v: '' }])}
+                  className="text-muted-foreground"
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Add parameter
+                </Button>
+              )}
             </div>
           ) : (
             <Input
@@ -1150,7 +1213,7 @@ function AffiliatesTab() {
           <div>
             <Button
               onClick={handleAdd}
-              disabled={!host.trim() || (mode === 'param' ? !param.trim() || !value.trim() : !target.trim())}
+              disabled={!host.trim() || (mode === 'param' ? !paramRows.some((r) => r.k.trim() && r.v.trim()) : !target.trim())}
               className="shrink-0"
             >
               <Plus className="w-4 h-4 mr-1.5" />
@@ -1186,7 +1249,9 @@ function AffiliatesTab() {
               <div className="flex-1 min-w-0">
                 <p className="font-mono text-sm truncate">{rule.host}</p>
                 <p className="font-mono text-[11px] text-muted-foreground truncate">
-                  {rule.mode === 'redirect' ? `→ ${rule.target}` : `?${rule.param}=${rule.value}`}
+                  {rule.mode === 'redirect'
+                    ? `→ ${rule.target}`
+                    : `?${Object.entries(rule.params ?? {}).map(([k, v]) => `${k}=${v}`).join('&')}`}
                 </p>
               </div>
               <Badge variant="outline" className="text-[10px] shrink-0 border-border text-muted-foreground">

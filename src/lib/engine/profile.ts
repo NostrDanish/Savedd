@@ -237,7 +237,7 @@ export const SAVEDD_PROFILE: CommunityEngineProfile = {
     navLinks: [{ to: '/about', label: 'About' }],
     footerLinks: [
       { to: '/about', label: 'About' },
-      { to: '/partners', label: 'Partners' },
+      { to: '/partners', label: 'Invite friends' },
       { to: '/settings', label: 'Settings' },
       { to: '/policy', label: 'Content Policy' },
     ],
