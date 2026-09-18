@@ -1,19 +1,20 @@
 /**
  * Referral hooks + click tracking.
  *
- *  - useReferralCapture(): mount once at app root. Reads `?ref=` from the
- *    URL, stores first-touch attribution, and publishes the referral ping.
+ *  - useReferralConfig()/useReferralConfigActions(): the savedd:referral-config
+ *    event (kind 30078) — public read, owner/admin write. Config gates the
+ *    capture; referral STATE stays per-device (see ReferralCapture.tsx).
  *  - trackAffiliateClick(rawUrl, taggedUrl): call from result/citation
  *    click handlers; publishes one kind 6079 event when the URL actually
- *    got an affiliate tag AND this device arrived via a partner link.
+ *    got an affiliate tag AND this device arrived via an invite link.
  *  - useMyReferralStats(): the partner dashboard query — pings + clicks
  *    filtered by `#p: [my pubkey]` from the moderation relay pool.
  *
  * All events are signed by the per-device analytics key (see
  * src/lib/referrals.ts), publish fire-and-forget, and never block a click.
  */
-import { useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { nip19 } from 'nostr-tools';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -22,35 +23,106 @@ import { getModerationRelayUrls } from '@/lib/moderation';
 import {
   REFERRAL_PING_KIND,
   AFFILIATE_CLICK_KIND,
-  parseRefParam,
+  SAVEDD_PROTOCOL,
   getStoredReferrer,
-  storeReferrer,
-  buildReferralPing,
   buildAffiliateClick,
+  parseReferralConfig,
+  buildReferralConfigEvent,
+  DEFAULT_REFERRAL_CONFIG,
+  type ReferralConfig,
 } from '@/lib/referrals';
+import {
+  OWNER_PUBKEY,
+  ROLES_KIND,
+  ROLE_LIST_D_TAGS,
+  PERMISSIONS,
+  resolveRoleEvents,
+} from '@/lib/saveddProtocol';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 /* ------------------------------------------------------------------ */
-/* Capture (app root)                                                  */
+/* Referral configuration (Savedd-owned, owner/admin-managed)          */
 /* ------------------------------------------------------------------ */
 
 /**
- * First-touch capture: a valid `?ref=` with no stored referrer stores the
- * attribution and pings once. Later links never overwrite (partners can't
- * poach each other's users by getting them to click again).
+ * The savedd:referral-config event — public read (every visitor needs it
+ * to decide whether `?ref=` captures), trusted only from owner + admins.
+ * Defaults apply when no config event exists yet.
  */
-export function useReferralCapture(): void {
-  useEffect(() => {
-    const ref = new URLSearchParams(window.location.search).get('ref');
-    if (!ref) return;
-    const pubkey = parseRefParam(ref);
-    if (!pubkey) return;
-    if (getStoredReferrer()) return; // first-touch already set
+export function useReferralConfig(): { config: ReferralConfig; isLoading: boolean } {
+  const { data, isLoading } = useQuery<ReferralConfig>({
+    queryKey: ['referral-config'],
+    queryFn: async ({ signal }) => {
+      const settled = await queryRelayPool(
+        getModerationRelayUrls(),
+        [
+          { kinds: [ROLES_KIND], authors: [OWNER_PUBKEY], '#d': [...ROLE_LIST_D_TAGS], limit: ROLE_LIST_D_TAGS.length },
+          { kinds: [30078], '#d': [SAVEDD_PROTOCOL.referralConfig], limit: 10 },
+        ],
+        { signal, timeoutMs: 5000 },
+      );
 
-    storeReferrer(pubkey);
-    // Fire-and-forget — a lost ping only means an undercounted referral.
-    void publishToRelayPool(getModerationRelayUrls(), buildReferralPing(pubkey), 5000).catch(() => {});
-  }, []);
+      const roleEvents: NostrEvent[] = [];
+      let best: NostrEvent | null = null;
+      for (const value of settled) {
+        for (const event of value) {
+          if (event.kind === ROLES_KIND) roleEvents.push(event);
+          else if (!best || event.created_at > best.created_at) best = event;
+        }
+      }
+
+      const { admins } = resolveRoleEvents(roleEvents);
+      const trusted = new Set([OWNER_PUBKEY, ...admins]);
+      if (!best || !trusted.has(best.pubkey)) return DEFAULT_REFERRAL_CONFIG;
+
+      return parseReferralConfig(best);
+    },
+    staleTime: 5 * 60_000,
+    retry: 0,
+  });
+
+  return { config: data ?? DEFAULT_REFERRAL_CONFIG, isLoading };
+}
+
+/** Owner/admin referral-config management. */
+export function useReferralConfigActions() {
+  const { user } = useCurrentUser();
+  const { role } = useAdminAccess();
+  const queryClient = useQueryClient();
+
+  const canManage = !!user && PERMISSIONS.canManageReferralConfig(role);
+
+  const updateConfig = useCallback(async (config: ReferralConfig) => {
+    if (!user || !canManage) throw new Error('Only the owner or an admin can manage referral settings');
+
+    const template = buildReferralConfigEvent(config, SAVEDD_PROTOCOL.referralConfig);
+
+    let event;
+    try {
+      event = await user.signer.signEvent({
+        kind: template.kind,
+        content: template.content,
+        tags: template.tags,
+        created_at: Math.floor(Date.now() / 1000),
+      });
+    } catch {
+      throw new Error('Signing failed — your signer did not respond. Check its connection and try again.');
+    }
+
+    let accepted = await publishToRelayPool(getModerationRelayUrls(), event, 12_000);
+    if (accepted === 0) {
+      await new Promise((r) => setTimeout(r, 2000));
+      accepted = await publishToRelayPool(getModerationRelayUrls(), event, 12_000);
+    }
+    if (accepted === 0) throw new Error('No relay accepted the event — check your connection and try again.');
+
+    setTimeout(() => {
+      void queryClient.invalidateQueries({ queryKey: ['referral-config'] });
+    }, 2000);
+  }, [user, canManage, queryClient]);
+
+  return { canManage, updateConfig };
 }
 
 /* ------------------------------------------------------------------ */

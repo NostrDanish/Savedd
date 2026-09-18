@@ -25,7 +25,7 @@ import {
   ShieldCheck, BarChart3, Flag, EyeOff, SearchCheck, Database,
   FileText, Gem, Inbox, Globe, Zap, Clock, ExternalLink,
   Loader2, Eye, RotateCcw, Users, Crown, UserCog, Plus, Trash2,
-  Sparkles, Lock, CheckCircle2, XCircle, KeyRound, Tag,
+  Sparkles, Lock, CheckCircle2, XCircle, KeyRound, Tag, Handshake,
 } from 'lucide-react';
 
 import { Layout } from '@/components/Layout';
@@ -61,6 +61,8 @@ import {
 } from '@/hooks/useModeration';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useAffiliateRules, useAffiliateActions } from '@/hooks/useAffiliates';
+import { useReferralConfig, useReferralConfigActions } from '@/hooks/useReferrals';
+import { DEFAULT_REFERRAL_CONFIG, type ReferralConfig } from '@/lib/referrals';
 import { applyAffiliateRules, isValidAffiliateRule, normalizeHostInput, paramsFromUrl, type AffiliateRule } from '@/lib/affiliates';
 import {
   OWNER_PUBKEY,
@@ -159,6 +161,9 @@ function AdminTabs() {
         {isAdmin && (
           <TabsTrigger value="affiliates" className="gap-1.5"><Tag className="w-3.5 h-3.5" />Affiliates</TabsTrigger>
         )}
+        {isAdmin && (
+          <TabsTrigger value="referrals" className="gap-1.5"><Handshake className="w-3.5 h-3.5" />Referrals</TabsTrigger>
+        )}
         {canManageRoles && (
           <TabsTrigger value="roles" className="gap-1.5"><Users className="w-3.5 h-3.5" />Roles</TabsTrigger>
         )}
@@ -169,6 +174,7 @@ function AdminTabs() {
       <TabsContent value="filter"><FilterTab /></TabsContent>
       <TabsContent value="ai"><AITab /></TabsContent>
       {isAdmin && <TabsContent value="affiliates"><AffiliatesTab /></TabsContent>}
+      {isAdmin && <TabsContent value="referrals"><ReferralsTab /></TabsContent>}
       {canManageRoles && <TabsContent value="roles"><RolesTab /></TabsContent>}
     </Tabs>
   );
@@ -853,7 +859,7 @@ function MemberRow({ pubkey, role, onRemove, removing }: {
 }
 
 function RolesTab() {
-  const { adminList, modList } = useAdminAccess();
+  const { adminList, modList, hasLegacyRoles, hasCanonicalAdmins, hasCanonicalMods } = useAdminAccess();
   const { updateRoleList } = useRoleActions();
   const { toast } = useToast();
   const [newMember, setNewMember] = useState('');
@@ -912,14 +918,51 @@ function RolesTab() {
     }
   };
 
+  const needsMigration = hasLegacyRoles && (!hasCanonicalAdmins || !hasCanonicalMods);
+
+  const handleMigrate = async () => {
+    setPending('migrate');
+    try {
+      // Publish the CURRENT effective lists (canonical ∪ legacy, owner-signed
+      // only) to the canonical savedd:* namespaces. Legacy events are never
+      // copied blindly — only lists already trusted because the owner signed
+      // them, and only by the owner's own hand here.
+      await updateRoleList(ADMIN_ROLES_D_TAG, adminList);
+      await updateRoleList(MOD_ROLES_D_TAG, modList);
+      toast({ title: 'Roles migrated', description: 'Team lists now live under savedd:admin-roles / savedd:mod-roles.' });
+    } catch (err) {
+      toast({ title: 'Migration failed', description: err instanceof Error ? err.message : 'Publish failed', variant: 'destructive' });
+    } finally {
+      setPending(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {needsMigration && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="py-4 flex flex-wrap items-center gap-3">
+            <p className="text-xs text-muted-foreground leading-relaxed flex-1 min-w-56">
+              Team roles still live in the legacy <span className="font-mono">presearchstr:*</span>{' '}
+              namespaces. They keep working (read-only), but writes now go to{' '}
+              <span className="font-mono">savedd:*</span>. Migrate explicitly to make the
+              canonical lists authoritative.
+            </p>
+            <Button onClick={() => void handleMigrate()} disabled={pending === 'migrate'} size="sm" className="shrink-0">
+              {pending === 'migrate' ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-1.5" />}
+              Migrate to savedd:*
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Add member */}
       <Card className="border-primary/20">
         <CardContent className="py-4">
           <p className="text-xs text-muted-foreground mb-3">
             Add a team member by npub or hex key. The role list is an owner-signed
-            addressable event (kind 30078) — every client resolves it live.
+            addressable event (kind 30078, <span className="font-mono">savedd:*</span>) —
+            every client resolves it live.
           </p>
           <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <Input
@@ -1307,6 +1350,136 @@ function AffiliatesTab() {
         Roles tab, their version stops being trusted immediately. Remember affiliate-program
         disclosure duties (e.g. Amazon Associates requires a visible earnings disclosure
         on the site — there is one on the About page).
+      </p>
+    </div>
+  );
+}
+
+/* ─── Referrals (Invite Friends config) ─── */
+
+function ReferralsTab() {
+  const { config, isLoading } = useReferralConfig();
+  const { updateConfig } = useReferralConfigActions();
+  const { toast } = useToast();
+
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [windowDays, setWindowDays] = useState('');
+  const [pending, setPending] = useState(false);
+
+  // One-time sync when the published config lands from the relays.
+  useEffect(() => {
+    if (enabled === null && !isLoading) {
+      setEnabled(config.enabled);
+      setWindowDays(String(config.attributionWindowDays));
+    }
+  }, [enabled, isLoading, config]);
+
+  const loaded = enabled !== null;
+  const windowNum = Math.floor(Number(windowDays));
+  const windowValid = Number.isFinite(windowNum) && windowNum > 0 && windowNum <= 3650;
+  const dirty = loaded && (enabled !== config.enabled || (windowValid && windowNum !== config.attributionWindowDays));
+
+  const handlePublish = async () => {
+    if (enabled === null || !windowValid) return;
+    setPending(true);
+    try {
+      const next: ReferralConfig = { enabled, attributionWindowDays: windowNum };
+      await updateConfig(next);
+      toast({ title: 'Referral settings published', description: 'Live for all users within a minute.' });
+    } catch (err) {
+      toast({ title: 'Publish failed', description: err instanceof Error ? err.message : 'Publish failed', variant: 'destructive' });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-primary/20">
+        <CardContent className="py-4 space-y-3">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Invite Friends configuration lives in one owner/admin-signed NIP-78 event
+            (kind 30078, <span className="font-mono">savedd:referral-config</span>).
+            It only holds program-wide settings — referral RELATIONSHIPS are never
+            stored in it (each one is a per-device attribution ping, kind 34967).
+          </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Identity is the inviter&apos;s <span className="font-mono">npub</span> — never a
+            username. Attribution is first-touch within the window, persisted on the
+            visitor&apos;s device, and self-referrals are rejected. An invite link grants
+            no authority of any kind.
+          </p>
+        </CardContent>
+      </Card>
+
+      {!loaded ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="py-4 space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">Invite Friends enabled</p>
+                <p className="text-xs text-muted-foreground">
+                  When off, <span className="font-mono">?ref=</span> links are ignored (no capture, no pings).
+                </p>
+              </div>
+              <Switch
+                checked={enabled}
+                onCheckedChange={setEnabled}
+                aria-label="Invite Friends enabled"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-sm font-medium">Attribution window (days)</p>
+                <p className="text-xs text-muted-foreground">
+                  First-touch attribution lasts this long; after it expires, a new invite link may re-attribute.
+                </p>
+              </div>
+              <Input
+                type="number"
+                min={1}
+                max={3650}
+                value={windowDays}
+                onChange={(e) => setWindowDays(e.target.value)}
+                className="w-24 font-mono text-sm"
+                aria-label="Attribution window in days"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <Button onClick={() => void handlePublish()} disabled={pending || !dirty || !windowValid}>
+                {pending ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+                Publish settings
+              </Button>
+              {dirty && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEnabled(config.enabled);
+                    setWindowDays(String(config.attributionWindowDays));
+                  }}
+                >
+                  Discard changes
+                </Button>
+              )}
+            </div>
+            {!windowValid && (
+              <p className="text-[11px] text-destructive">Window must be 1–3650 days.</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <p className="text-[11px] text-muted-foreground/70 leading-relaxed">
+        Defaults when nothing is published: enabled, {DEFAULT_REFERRAL_CONFIG.attributionWindowDays}-day
+        window. Owner and admins can edit; the latest signed version wins.
       </p>
     </div>
   );

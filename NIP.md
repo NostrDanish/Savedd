@@ -12,17 +12,17 @@ formats. Current support:
 | NIP-23 | Long-form articles | 30023 | ✅ read (Nostr tab + All) |
 | NIP-24 | Extra metadata (`display_name`, `website`, `banner`, `bot`) | 0 | ✅ read (profile pages) |
 | NIP-25 | Reactions (votes) | 7 | ✅ read + write — 👍/👎 on results; anonymous via the device indexing identity by default, or the user's npub when toggled |
-| NIP-09 | Deletion | 5 | ✅ write (owner retracts moderation labels; users retract their own web bookmarks) |
-| NIP-32 | Labeling (`L`/`l`) | —, 1985 | ✅ write (abuse reports self-label with `0xsearchstr.abuse`; owner moderation labels under `0xsearchstr.moderation`) + ✅ read (owner-signed `hidden` labels filter all users' results) |
+| NIP-09 | Deletion | 5 | ✅ write (team retracts its own moderation labels; users retract their own web bookmarks) |
+| NIP-32 | Labeling (`L`/`l`) | —, 1985 | ✅ write (abuse reports self-label `savedd.abuse`; team moderation labels under `savedd.moderation`) + ✅ read (team-signed `hidden` labels filter all users' results). Legacy read: `0xsearchstr.moderation` / `0xsearchstr.abuse` (owner/team-signed only, never written) |
 | NIP-34 | Git collaboration | 30617, 1621, 1618, 1617 | ✅ read — Code tab: repos (link `web`/`clone`), issues, PRs, patches from the read-only ngit/GRASP pool (`GIT_RELAYS`) |
 | NIP-35 | Torrents | 2003 | ✅ read — results link the constructed magnet URI |
 | NIP-36 | Content warnings | any | ✅ `content-warning` events render collapsed until tapped |
 | NIP-50 | Search capability | — | ✅ NIP-50 `search` filters on every Nostr read |
 | NIP-54 | Wiki | 30818 | ✅ read — dedicated wiki relay pool (wikistr relays: `relay.wikifreedia.xyz`, `nostr.wine`, `nostr21.com`, `relay.nostr.band`), user-editable in Settings → Wiki Relays |
-| NIP-56 | Reporting | 1984 | ✅ write (Policy page abuse reports, with NIP-32 labels) |
+| NIP-56 | Reporting | 1984 | ✅ write (Policy page abuse reports, self-labeled `savedd.abuse`) |
 | NIP-65 | Relay list metadata | 10002 | ✅ read + write (Settings → Your Relays) |
 | NIP-77 | Negentropy sync | — | 📖 documented in SIP-01 §15 (relay-to-relay, nothing client-side) |
-| NIP-78 | App-specific data | 30078 | ✅ submissions / stakes / term signals (read + write) · legacy cache (read-only, see below) · `savedd:affiliate-rules` — affiliate config (read all, write owner + owner-listed admins); rules: `{host, mode:"param", param, value}` (Amazon-style `?tag=`) or `{host, mode:"redirect", target}` (invite-link services like PPQ /invite/, nano-gpt /r/; `{url}` placeholder = encoded original URL) |
+| NIP-78 | App-specific data | 30078 | ✅ submissions / stakes / term signals (read + write) · legacy cache (read-only, see below) · SAVEDD control plane (see [docs/SAVEDD-NOSTR-PROTOCOL.md](docs/SAVEDD-NOSTR-PROTOCOL.md)): `savedd:admin-roles` + `savedd:mod-roles` (owner-signed), `savedd:affiliate-rules` + `savedd:referral-config` (owner/admin). Legacy read-only: `presearchstr:*-roles` |
 | NIP-92 | Media attachments (`imeta`) | 1 | ✅ read (inline thumbnails in results) |
 | NIP-94 | File metadata | 1063 | ✅ read (file results) |
 | NIP-B0 | Web bookmarks | 39701 | ✅ read (Community provider — user-curated links) + ✅ write (logged-in users save/remove bookmarks on results and manage them at `/bookmarks`) |

@@ -2,9 +2,10 @@
  * Abuse reports (NIP-56, kind 1984) — shared builders.
  *
  * Reports are public, attributable events: anyone reading the
- * `0xsearchstr.abuse` label namespace (our dashboard, relays, other
- * clients) sees the same inbox. Published from the Policy page and from
- * the flag action on result cards.
+ * `savedd.abuse` label namespace (our dashboard, relays, other clients)
+ * sees the same inbox. Published from the Policy page and from the flag
+ * action on result cards. Legacy reports under `0xsearchstr.abuse` remain
+ * readable by the dashboard; new reports are only written as `savedd.abuse`.
  */
 import { nip19 } from 'nostr-tools';
 

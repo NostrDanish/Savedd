@@ -1,32 +1,46 @@
 /**
- * Moderation — owner-signed result filtering (NIP-32 labels + NIP-09 deletes).
+ * Moderation — team-signed result filtering (NIP-32 labels + NIP-09 deletes).
+ * This is SAVEDD application control-plane data — NOT SIP-01 protocol data.
+ * Namespaces live in src/lib/saveddProtocol.ts (single source of truth).
  *
- * The owner key publishes kind 1985 label events marking results as hidden:
+ * Team members (owner + admins + moderators) publish kind 1985 label events
+ * marking results as hidden:
  *
- *   ["L", "0xsearchstr.moderation"]            ← namespace
- *   ["l", "hidden", "0xsearchstr.moderation"]  ← label
- *   ["u", "<normalized-url>"]                  ← target (web result)
- *   ["e", "<event-id>"]                        ← target (Nostr result)
+ *   ["L", "savedd.moderation"]            ← canonical namespace
+ *   ["l", "hidden", "savedd.moderation"]  ← label
+ *   ["u", "<normalized-url>"]             ← target (web result)
+ *   ["e", "<event-id>"]                   ← target (Nostr result)
  *
  * Readers (every user of the app) filter their own result lists against
- * labels signed by the OWNER pubkey ONLY — the author filter is the trust
- * boundary; anyone can write a label, only the owner's count.
+ * labels signed by TRUSTED team keys ONLY (owner + owner-listed team) — the
+ * author filter is the trust boundary. Legacy labels under
+ * `0xsearchstr.moderation` keep working for reads; new labels are only
+ * written under `savedd.moderation`.
  *
  * Un-hiding = NIP-09 deletion (kind 5 with an e-tag of the label event).
  *
  * Abuse reports filed from the Policy page are NIP-56 kind 1984 events
- * labeled under the `0xsearchstr.abuse` namespace — the dashboard reads
- * them and turns them into moderation labels in one click.
+ * labeled under the `savedd.abuse` namespace (legacy read: `0xsearchstr.abuse`).
  *
  * ⚠️ KEY NOTE: OWNER_PUBKEY is the project owner's personal key — its nsec
  * lives only in the owner's own signer, never in this codebase. Running a
- * fork? Replace it with your own pubkey (a one-line change) or the role
- * lists and moderation labels you sign won't be trusted by your deployment.
+ * fork? Replace it in src/lib/saveddProtocol.ts (a one-line change).
  */
 import type { NostrEvent } from '@nostrify/nostrify';
 
 import { normalizeIndexUrl } from '@/lib/webIndex';
 import { APP_RELAYS, getIndexRelayUrls, getSearchRelayUrls } from '@/lib/appRelays';
+import {
+  OWNER_PUBKEY,
+  SAVEDD_PROTOCOL,
+  LEGACY_PROTOCOL,
+  ROLES_KIND,
+  MODERATION_KIND,
+  REPORT_KIND,
+  isModerationNs,
+} from '@/lib/saveddProtocol';
+
+export { OWNER_PUBKEY };
 
 /** Relays moderation data (labels, role lists, reports) is read from. */
 export function getModerationRelayUrls(): string[] {
@@ -40,20 +54,18 @@ export function getModerationRelayUrls(): string[] {
   ];
 }
 
-/** The owner's pubkey (hex) — npub1c3gyzcvf2xakqy4vy06umu7hgpr97ttyp05yrlvmk8g8xvmse57qj286r6 */
-export const OWNER_PUBKEY = 'c45041618951bb6012ac23f5cdf3d740465f2d640be841fd9bb1d0733370cd3c';
+/** NIP-32 label kind. Re-exported from the central protocol module. */
+export { MODERATION_KIND, REPORT_KIND, ROLES_KIND };
 
-/** NIP-32 label kind. */
-export const MODERATION_KIND = 1985;
+/** Label namespace for moderation actions (canonical — the only one written). */
+export const MODERATION_NS = SAVEDD_PROTOCOL.moderation;
+/** Legacy read-only namespace (existing hidden labels). Never write new ones. */
+export const LEGACY_MODERATION_NS = LEGACY_PROTOCOL.moderation;
 
-/** Label namespace for moderation actions. */
-export const MODERATION_NS = '0xsearchstr.moderation';
-
-/** NIP-56 report kind (Policy page abuse reports). */
-export const REPORT_KIND = 1984;
-
-/** Label namespace for abuse reports. */
-export const REPORT_NS = '0xsearchstr.abuse';
+/** Label namespace for abuse reports (canonical — the only one written). */
+export const REPORT_NS = SAVEDD_PROTOCOL.abuse;
+/** Legacy read-only namespace (existing reports). Never write new ones. */
+export const LEGACY_REPORT_NS = LEGACY_PROTOCOL.abuse;
 
 /* ------------------------------------------------------------------ */
 /* Roles (owner-managed team lists)                                    */
@@ -64,12 +76,19 @@ export const REPORT_NS = '0xsearchstr.abuse';
  * Content is a JSON array of hex pubkeys. Readers trust the owner's
  * signature only — the d-tag alone is not a trust boundary.
  *
- * Pattern adapted from 0xNostr-Relay-Finder's dashboard.
+ * Canonical d-tags are savedd:*; the legacy presearchstr:* lists are
+ * READ-ONLY (still trusted when owner-signed) until the owner migrates
+ * (Admin → Roles). New writes are canonical only.
  */
-export const ROLES_KIND = 30078;
-export const ADMIN_ROLES_D_TAG = 'presearchstr:admin-roles';
-export const MOD_ROLES_D_TAG = 'presearchstr:mod-roles';
-export const ROLES_T_TAG = 'presearchstr-roles'; // frozen federation namespace — do not rename (breaks existing role lists)
+export const ADMIN_ROLES_D_TAG = SAVEDD_PROTOCOL.adminRoles;
+export const MOD_ROLES_D_TAG = SAVEDD_PROTOCOL.moderatorRoles;
+export const ROLES_T_TAG = SAVEDD_PROTOCOL.rolesTag;
+/** Legacy read-only role namespaces. Never write new ones. */
+export const LEGACY_ADMIN_ROLES_D_TAG = LEGACY_PROTOCOL.adminRoles;
+export const LEGACY_MOD_ROLES_D_TAG = LEGACY_PROTOCOL.moderatorRoles;
+
+/** @deprecated Alias kept for existing imports — new code uses SaveddRole. */
+export type AppRole = import('@/lib/saveddProtocol').SaveddRole;
 
 export type AppRole = 'owner' | 'admin' | 'moderator' | 'user';
 
@@ -99,7 +118,7 @@ export function buildRoleListEvent(dTag: string, pubkeys: string[]): {
     tags: [
       ['d', dTag],
       ['t', ROLES_T_TAG],
-      ['alt', `Dsearch ${label} list`],
+      ['alt', `SAVEDD ${label} list (owner-signed)`],
     ],
   };
 }
@@ -124,7 +143,8 @@ export function parseHiddenLabel(event: NostrEvent, trusted: Set<string> = new S
   if (event.kind !== MODERATION_KIND) return null;
   if (!trusted.has(event.pubkey)) return null; // trust boundary
 
-  const isHidden = event.tags.some(([n, v, ns]) => n === 'l' && v === 'hidden' && ns === MODERATION_NS);
+  // Canonical + legacy namespaces both hide (read path; writes are canonical).
+  const isHidden = event.tags.some(([n, v, ns]) => n === 'l' && v === 'hidden' && isModerationNs(ns));
   if (!isHidden) return null;
 
   const uTag = event.tags.find(([n]) => n === 'u')?.[1];
@@ -156,7 +176,7 @@ export function buildHideLabel(target: { url?: string; eventId?: string }): {
       ['L', MODERATION_NS],
       ['l', 'hidden', MODERATION_NS],
       targetTag,
-      ['alt', `Dsearch moderation: hidden ${targetTag[0] === 'u' ? targetTag[1] : 'event'}`],
+      ['alt', `SAVEDD moderation: hidden ${targetTag[0] === 'u' ? targetTag[1] : 'event'}`],
     ],
   };
 }

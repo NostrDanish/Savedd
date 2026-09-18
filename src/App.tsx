@@ -15,7 +15,7 @@ import { AppConfig } from '@/contexts/AppContext';
 import { APP_RELAYS } from '@/lib/appRelays';
 import { getBrowserLanguage } from '@/lib/languageFilter';
 import { ENGINE_PROFILE } from '@/lib/engine/profile';
-import { useReferralCapture } from '@/hooks/useReferrals';
+import { ReferralCapture } from '@/components/ReferralCapture';
 import AppRouter from './AppRouter';
 
 const head = createHead({
@@ -61,9 +61,6 @@ const defaultConfig: AppConfig = {
 };
 
 export function App() {
-  // Partner tracking links (?ref=npub…) — first-touch capture + one ping.
-  useReferralCapture();
-
   return (
     <UnheadProvider head={head}>
       <AppProvider storageKey="savedd:app-config" defaultConfig={defaultConfig}>
@@ -71,6 +68,9 @@ export function App() {
           <NostrLoginProvider storageKey='nostr:login'>
             <NostrProvider>
               <NostrSync />
+              {/* Invite Friends capture (?ref=npub…) — inside providers so the
+                  self-referral guard can see the logged-in user. */}
+              <ReferralCapture />
               <TooltipProvider>
                 <Toaster />
                 <Suspense>

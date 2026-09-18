@@ -17,8 +17,10 @@ import { getWebEngineBases } from './enginePriority';
 import { braveLanguageParam } from '@/lib/languageFilter';
 import { toEngineQuery } from '@/lib/queryParser';
 import { ENGINE_AI_BASE } from '@/lib/aiConfig';
+import { readStoredWithLegacy, writeStoredCanonical } from '@/lib/saveddProtocol';
 
-const LS_BRAVE_KEY = 'presearchstr:brave-api-key';
+const LS_BRAVE_KEY = 'savedd:brave-api-key';
+const LEGACY_LS_BRAVE_KEY = 'presearchstr:brave-api-key';
 const API_URL = 'https://api.search.brave.com/res/v1/web/search';
 // Engine Brave lives on the same worker as engine AI (/api/ai ↔ /api/search).
 const ENGINE_BRAVE_URL = `${ENGINE_AI_BASE.replace(/\/ai$/, '')}/search/brave`;
@@ -26,7 +28,7 @@ const ENGINE_BRAVE_URL = `${ENGINE_AI_BASE.replace(/\/ai$/, '')}/search/brave`;
 /** Read the user's Brave API key (empty when unset). */
 export function getBraveApiKey(): string {
   try {
-    return (localStorage.getItem(LS_BRAVE_KEY) ?? '').trim();
+    return (readStoredWithLegacy(LS_BRAVE_KEY, LEGACY_LS_BRAVE_KEY) ?? '').trim();
   } catch {
     return '';
   }
@@ -36,8 +38,7 @@ export function getBraveApiKey(): string {
 export function setBraveApiKey(key: string): void {
   try {
     const trimmed = key.trim();
-    if (trimmed) localStorage.setItem(LS_BRAVE_KEY, trimmed);
-    else localStorage.removeItem(LS_BRAVE_KEY);
+    writeStoredCanonical(LS_BRAVE_KEY, LEGACY_LS_BRAVE_KEY, trimmed || null);
   } catch {
     // Storage unavailable — the provider just stays dormant.
   }

@@ -27,10 +27,11 @@ import {
 import {
   OWNER_PUBKEY,
   ROLES_KIND,
-  ADMIN_ROLES_D_TAG,
-  parseRoleList,
-  getModerationRelayUrls,
-} from '@/lib/moderation';
+  ROLE_LIST_D_TAGS,
+  PERMISSIONS,
+  resolveRoleEvents,
+} from '@/lib/saveddProtocol';
+import { getModerationRelayUrls } from '@/lib/moderation';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
@@ -38,15 +39,16 @@ export function useAffiliateRules(): { rules: AffiliateRule[]; isLoading: boolea
   const { data, isLoading } = useQuery<AffiliateRule[]>({
     queryKey: ['affiliate-rules'],
     queryFn: async ({ signal }) => {
-      // One round-trip: the owner-signed admin role list + every candidate
-      // affiliate config (owner + any plausible team author — narrowed
-      // properly once roles are parsed below).
+      // One round-trip: the owner-signed role lists (canonical + legacy)
+      // + every candidate affiliate config. Author trust is resolved via
+      // the central role model (resolveRoleEvents) — legacy admin lists
+      // still count until the owner migrates them.
       const filters: NostrFilter[] = [
         {
           kinds: [ROLES_KIND],
           authors: [OWNER_PUBKEY],
-          '#d': [ADMIN_ROLES_D_TAG],
-          limit: 1,
+          '#d': [...ROLE_LIST_D_TAGS],
+          limit: ROLE_LIST_D_TAGS.length,
         },
         {
           kinds: [AFFILIATES_KIND],
@@ -57,27 +59,19 @@ export function useAffiliateRules(): { rules: AffiliateRule[]; isLoading: boolea
 
       const settled = await queryRelayPool(getModerationRelayUrls(), filters, { signal, timeoutMs: 5000 });
 
-      let roleEvent: NostrEvent | null = null;
-      let configEvent: NostrEvent | null = null;
+      const roleEvents: NostrEvent[] = [];
       for (const value of settled) {
         for (const event of value) {
-          if (event.kind === ROLES_KIND && event.pubkey === OWNER_PUBKEY) {
-            if (!roleEvent || event.created_at > roleEvent.created_at) roleEvent = event;
-          } else if (event.kind === AFFILIATES_KIND) {
-            if (!configEvent || event.created_at > configEvent.created_at) {
-              // Tentatively accept — the author check happens after roles parse.
-              configEvent = event;
-            }
-          }
+          if (event.kind === ROLES_KIND) roleEvents.push(event);
         }
       }
+      const { admins } = resolveRoleEvents(roleEvents);
 
       // Trusted authors: owner + current admins. An admin who was removed
       // stops being trusted immediately (the role list is the latest word).
-      const trusted = new Set([OWNER_PUBKEY, ...(roleEvent ? parseRoleList(roleEvent) : [])]);
+      const trusted = new Set([OWNER_PUBKEY, ...admins]);
 
-      // Last-write-wins among trusted team members: walk all candidates in
-      // case the newest came from someone no longer on the team.
+      // Last-write-wins among trusted team members.
       let best: NostrEvent | null = null;
       for (const value of settled) {
         for (const event of value) {
@@ -99,10 +93,11 @@ export function useAffiliateRules(): { rules: AffiliateRule[]; isLoading: boolea
 /** Team rule management (owner + admins; whole-list replace, addressable). */
 export function useAffiliateActions() {
   const { user } = useCurrentUser();
-  const { isAdmin } = useAdminAccess();
+  const { role } = useAdminAccess();
   const queryClient = useQueryClient();
 
-  const canManage = !!user && isAdmin;
+  // Central permission matrix — owner + admins, nothing else.
+  const canManage = !!user && PERMISSIONS.canManageAffiliates(role);
 
   const updateRules = useCallback(async (rules: AffiliateRule[]) => {
     if (!user || !canManage) throw new Error('Only the owner or an admin can manage affiliate rules');

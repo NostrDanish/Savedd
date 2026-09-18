@@ -33,8 +33,62 @@ export const AFFILIATE_CLICK_KIND = 6079;
 /** Shared topic marker for both kinds. */
 export const REFERRAL_T_TAG = 'savedd-referral';
 
+/** Invite Friends config (kind 30078, d-tag) — SAVEDD control-plane data,
+ *  defined in src/lib/saveddProtocol.ts. Owner/admin-signed. */
+export { SAVEDD_PROTOCOL } from '@/lib/saveddProtocol';
+
 const LS_REFERRER = 'savedd:referrer';
 const LS_REF_DEVICE_KEY = 'savedd:ref-device-key';
+
+/* ------------------------------------------------------------------ */
+/* Referral configuration (Savedd-owned; NOT referral state)           */
+/* ------------------------------------------------------------------ */
+
+export interface ReferralConfig {
+  enabled: boolean;
+  /** Days a first-touch attribution lasts before a new link may re-attribute. */
+  attributionWindowDays: number;
+}
+
+export const DEFAULT_REFERRAL_CONFIG: ReferralConfig = {
+  enabled: true,
+  attributionWindowDays: 90,
+};
+
+/** Parse a savedd:referral-config event (author trust enforced by caller). */
+export function parseReferralConfig(event: NostrEvent): ReferralConfig {
+  if (event.kind !== 30078) return DEFAULT_REFERRAL_CONFIG;
+  try {
+    const parsed = JSON.parse(event.content) as Record<string, unknown>;
+    const enabled = typeof parsed.enabled === 'boolean' ? parsed.enabled : DEFAULT_REFERRAL_CONFIG.enabled;
+    const window_ = Number(parsed.attributionWindowDays);
+    return {
+      enabled,
+      attributionWindowDays: Number.isFinite(window_) && window_ > 0 && window_ <= 3650
+        ? Math.floor(window_)
+        : DEFAULT_REFERRAL_CONFIG.attributionWindowDays,
+    };
+  } catch {
+    return DEFAULT_REFERRAL_CONFIG;
+  }
+}
+
+/** Build the referral-config event template (owner/admin publishes). */
+export function buildReferralConfigEvent(config: ReferralConfig, dTag: string): {
+  kind: number;
+  content: string;
+  tags: string[][];
+} {
+  return {
+    kind: 30078,
+    content: JSON.stringify({ version: 1, ...config }),
+    tags: [
+      ['d', dTag],
+      ['t', REFERRAL_T_TAG],
+      ['alt', 'SAVEDD Invite Friends configuration'],
+    ],
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /* Ref param parsing                                                   */
@@ -77,13 +131,26 @@ export function getStoredReferrer(): StoredReferrer | null {
   }
 }
 
-/** First-touch only: an existing attribution is never overwritten. */
-export function storeReferrer(pubkey: string): void {
+/**
+ * First-touch within the attribution window: an existing in-window
+ * attribution is never overwritten (partners can't poach each other by
+ * getting the same person to click again). After the window expires, a new
+ * link may re-attribute. Returns true when the attribution was stored —
+ * the caller pings only then.
+ */
+export function storeReferrer(pubkey: string, attributionWindowDays: number): boolean {
   try {
-    if (getStoredReferrer()) return;
+    const existing = getStoredReferrer();
+    if (existing) {
+      if (existing.pubkey === pubkey) return false; // same partner — nothing to re-attribute
+      const ageDays = (Math.floor(Date.now() / 1000) - existing.at) / 86_400;
+      if (ageDays <= attributionWindowDays) return false;
+    }
     localStorage.setItem(LS_REFERRER, JSON.stringify({ pubkey, at: Math.floor(Date.now() / 1000) }));
+    return true;
   } catch {
     // Storage unavailable — referral simply won't attribute.
+    return false;
   }
 }
 

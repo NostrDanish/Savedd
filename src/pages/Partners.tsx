@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useMyReferralStats } from '@/hooks/useReferrals';
+import { useMyReferralStats, useReferralConfig } from '@/hooks/useReferrals';
 import { useToast } from '@/hooks/useToast';
 import { ENGINE_PROFILE } from '@/lib/engine/profile';
 
@@ -38,6 +38,7 @@ function timeAgo(ts: number): string {
 const Partners = () => {
   const { user } = useCurrentUser();
   const { stats, isLoading } = useMyReferralStats();
+  const { config: referralConfig, isLoading: configLoading } = useReferralConfig();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
@@ -81,6 +82,15 @@ const Partners = () => {
                 No account creation, no email — your key is your account.
               </p>
               <LoginArea className="max-w-60 mx-auto" />
+            </CardContent>
+          </Card>
+        ) : !configLoading && !referralConfig.enabled ? (
+          <Card className="border-dashed">
+            <CardContent className="py-12 px-8 text-center">
+              <Handshake className="w-8 h-8 mx-auto mb-3 text-muted-foreground/40" />
+              <p className="text-muted-foreground max-w-sm mx-auto text-sm">
+                The Invite Friends program is currently paused. Check back soon.
+              </p>
             </CardContent>
           </Card>
         ) : isLoading || !stats ? (
