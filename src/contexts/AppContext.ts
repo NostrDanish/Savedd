@@ -40,6 +40,13 @@ export interface AppConfig {
    * synced from Nostr on login and published on edit. Logged-out: empty.
    */
   userRelayMetadata: RelayMetadata;
+  /**
+   * Use my relays — when ON, the app pool also reads/writes the user's
+   * NIP-65 relays (their data lands on their relays). OFF by default: the
+   * app runs on its own App Relays pool only. (Ditto's `useAppRelays`
+   * toggle, mirrored for the user side.)
+   */
+  useUserRelays: boolean;
   /** User's kind 10063 Blossom server list. */
   blossomServerMetadata: BlossomServerMetadata;
   /**

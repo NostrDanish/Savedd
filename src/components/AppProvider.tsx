@@ -42,6 +42,7 @@ const AppConfigSchema = z.object({
   accentColor: z.enum(['amber', 'blue', 'red', 'green', 'violet', 'cyan']).optional(),
   relayMetadata: RelayMetadataSchema,
   userRelayMetadata: RelayMetadataSchema,
+  useUserRelays: z.boolean(),
   blossomServerMetadata: BlossomServerMetadataSchema,
   useAppBlossomServers: z.boolean(),
   privacyMode: z.boolean(),

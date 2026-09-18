@@ -39,7 +39,9 @@ const defaultConfig: AppConfig = {
   // App relays: what the app needs to run (device-local, never published).
   relayMetadata: APP_RELAYS,
   // Your relays: the logged-in user's own NIP-65 list — synced on login.
+  // Off by default: the app runs on its own App Relays until the user opts in.
   userRelayMetadata: { relays: [], updatedAt: 0 },
+  useUserRelays: false,
   blossomServerMetadata: {
     servers: [
       'https://blossom.ditto.pub/',

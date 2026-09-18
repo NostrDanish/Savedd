@@ -87,11 +87,13 @@ export function useLoginActions() {
         'wss://relay.ditto.pub/',  // app default, reliable
       ];
 
-      // The user's own write relays (their synced NIP-65 list) — app relays
-      // are the fallback, not the other way around.
-      const userRelays = config.userRelayMetadata.relays
-        .filter((r) => r.write)
-        .map((r) => toSecureRelayUrl(r.url));
+      // The user's own write relays (their synced NIP-65 list) only when
+      // "Use my relays" is on — off means the app touches app relays only.
+      const userRelays = config.useUserRelays
+        ? config.userRelayMetadata.relays
+            .filter((r) => r.write)
+            .map((r) => toSecureRelayUrl(r.url))
+        : [];
       const fallback = APP_RELAYS.relays.filter((r) => r.write).map((r) => r.url);
 
       return [...new Set([...HANDSHAKE_RELAYS, ...userRelays, ...fallback])];

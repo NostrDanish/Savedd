@@ -684,6 +684,7 @@ function IndexingSection() {
 
 function YourRelaysSection() {
   const { user } = useCurrentUser();
+  const { config, updateConfig } = useAppContext();
 
   return (
     <>
@@ -711,9 +712,30 @@ function YourRelaysSection() {
           Nostr. Existing lists are never overwritten with app defaults.
         </p>
         <Card className="border-border/60">
-          <CardContent className="py-4">
+          <CardContent className="py-4 space-y-4">
             {user ? (
-              <UserRelayListManager />
+              <>
+                <div className="flex items-center justify-between gap-4 pb-1 border-b border-border/40">
+                  <div className="min-w-0">
+                    <Label htmlFor="use-user-relays" className="text-sm font-medium cursor-pointer">
+                      Use my relays in this app
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Off by default — {ENGINE_PROFILE.branding.name} runs on its own App
+                      Relays. Turn on to also read and publish through your relays (your
+                      events land on your relays too).
+                    </p>
+                  </div>
+                  <Switch
+                    id="use-user-relays"
+                    checked={config.useUserRelays}
+                    onCheckedChange={(checked) =>
+                      updateConfig((current) => ({ ...current, useUserRelays: checked }))
+                    }
+                  />
+                </div>
+                <UserRelayListManager />
+              </>
             ) : (
               <p className="text-sm text-muted-foreground py-2">
                 Log in to manage your public NIP-65 relay list.
