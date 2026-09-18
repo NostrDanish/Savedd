@@ -36,7 +36,10 @@ const queryClient = new QueryClient({
 
 const defaultConfig: AppConfig = {
   theme: ENGINE_PROFILE.branding.defaultTheme,
+  // App relays: what the app needs to run (device-local, never published).
   relayMetadata: APP_RELAYS,
+  // Your relays: the logged-in user's own NIP-65 list — synced on login.
+  userRelayMetadata: { relays: [], updatedAt: 0 },
   blossomServerMetadata: {
     servers: [
       'https://blossom.ditto.pub/',

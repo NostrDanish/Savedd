@@ -87,7 +87,9 @@ export function useLoginActions() {
         'wss://relay.ditto.pub/',  // app default, reliable
       ];
 
-      const userRelays = config.relayMetadata.relays
+      // The user's own write relays (their synced NIP-65 list) — app relays
+      // are the fallback, not the other way around.
+      const userRelays = config.userRelayMetadata.relays
         .filter((r) => r.write)
         .map((r) => toSecureRelayUrl(r.url));
       const fallback = APP_RELAYS.relays.filter((r) => r.write).map((r) => r.url);

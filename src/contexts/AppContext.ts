@@ -29,8 +29,17 @@ export interface AppConfig {
    * owns its green.
    */
   accentColor?: AccentColor;
-  /** NIP-65 relay list metadata */
+  /**
+   * App relays — the relay pool THIS app uses on this device (what the app
+   * needs to run). Device-local app configuration; NEVER published as the
+   * user's public NIP-65 identity.
+   */
   relayMetadata: RelayMetadata;
+  /**
+   * Your relays — the logged-in user's own NIP-65 relay list (kind 10002),
+   * synced from Nostr on login and published on edit. Logged-out: empty.
+   */
+  userRelayMetadata: RelayMetadata;
   /** User's kind 10063 Blossom server list. */
   blossomServerMetadata: BlossomServerMetadata;
   /**

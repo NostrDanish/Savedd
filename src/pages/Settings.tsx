@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 import { Layout } from '@/components/Layout';
-import { RelayListManager } from '@/components/RelayListManager';
+import { RelayListManager, UserRelayListManager } from '@/components/RelayListManager';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -679,24 +679,50 @@ function IndexingSection() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Your relays (NIP-65)                                                */
+/* App relays (device-local) + Your relays (NIP-65)                    */
 /* ------------------------------------------------------------------ */
 
 function YourRelaysSection() {
+  const { user } = useCurrentUser();
+
   return (
-    <section className="mb-10">
-      <h2 className="text-sm font-semibold mb-1">Your Relays</h2>
-      <p className="text-xs text-muted-foreground mb-4">
-        Your NIP-65 relay list — where your profile, submissions, and other events are
-        published and read. Defaults to the {ENGINE_PROFILE.branding.name} app relays for new
-        users; changes sync to Nostr (kind 10002) when you're logged in.
-      </p>
-      <Card className="border-border/60">
-        <CardContent className="py-4">
-          <RelayListManager />
-        </CardContent>
-      </Card>
-    </section>
+    <>
+      {/* App relays — what the app needs to run on this device. */}
+      <section className="mb-10">
+        <h2 className="text-sm font-semibold mb-1">App Relays</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          The relay pool {ENGINE_PROFILE.branding.name} uses on this device — what the app
+          needs to run. This is app-specific, device-local configuration: it is NOT your
+          public NIP-65 relay list and is never published to Nostr.
+        </p>
+        <Card className="border-border/60">
+          <CardContent className="py-4">
+            <RelayListManager />
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Your relays — the user's own NIP-65 identity list (logged in only). */}
+      <section className="mb-10">
+        <h2 className="text-sm font-semibold mb-1">Your Relays</h2>
+        <p className="text-xs text-muted-foreground mb-4">
+          Your public NIP-65 relay list (kind 10002) — the relays other Nostr apps use to
+          find your profile and events. Synced from Nostr on login; changes publish to
+          Nostr. Existing lists are never overwritten with app defaults.
+        </p>
+        <Card className="border-border/60">
+          <CardContent className="py-4">
+            {user ? (
+              <UserRelayListManager />
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">
+                Log in to manage your public NIP-65 relay list.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+    </>
   );
 }
 

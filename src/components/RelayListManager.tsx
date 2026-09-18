@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, X, Wifi, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,24 +17,13 @@ interface Relay {
   write: boolean;
 }
 
-export function RelayListManager() {
-  const { config, updateConfig } = useAppContext();
-  const { user } = useCurrentUser();
-  const { nostr } = useNostr();
-  const { mutate: publishEvent } = useNostrPublish();
+/* ------------------------------------------------------------------ */
+/* Shared editor UI (presentational — no storage, no publishing)       */
+/* ------------------------------------------------------------------ */
+
+function RelayListEditor({ relays, onSave }: { relays: Relay[]; onSave: (relays: Relay[]) => void }) {
   const { toast } = useToast();
-
-  const [relays, setRelays] = useState<Relay[]>(config.relayMetadata.relays);
   const [newRelayUrl, setNewRelayUrl] = useState('');
-
-  // Sync local state with config when it changes (e.g., from NostrProvider sync).
-  // This is a legitimate "mirror external source of truth" pattern: the local
-  // `relays` state is what the UI edits optimistically, and we need to reset
-  // it when the authoritative config changes from outside.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRelays(config.relayMetadata.relays);
-  }, [config.relayMetadata.relays]);
 
   const normalizeRelayUrl = (url: string): string => {
     url = url.trim();
@@ -83,149 +72,20 @@ export function RelayListManager() {
       return;
     }
 
-    const newRelays = [...relays, { url: normalized, read: true, write: true }];
-    setRelays(newRelays);
+    onSave([...relays, { url: normalized, read: true, write: true }]);
     setNewRelayUrl('');
-
-    saveRelays(newRelays);
   };
 
   const handleRemoveRelay = (url: string) => {
-    const newRelays = relays.filter(r => r.url !== url);
-    setRelays(newRelays);
-    saveRelays(newRelays);
+    onSave(relays.filter(r => r.url !== url));
   };
 
   const handleToggleRead = (url: string) => {
-    const newRelays = relays.map(r =>
-      r.url === url ? { ...r, read: !r.read } : r
-    );
-    setRelays(newRelays);
-    saveRelays(newRelays);
+    onSave(relays.map(r => r.url === url ? { ...r, read: !r.read } : r));
   };
 
   const handleToggleWrite = (url: string) => {
-    const newRelays = relays.map(r =>
-      r.url === url ? { ...r, write: !r.write } : r
-    );
-    setRelays(newRelays);
-    saveRelays(newRelays);
-  };
-
-  const saveRelays = (newRelays: Relay[]) => {
-    // Only called from event handlers, not during render, so Date.now() is safe.
-    // eslint-disable-next-line react-hooks/purity
-    const now = Math.floor(Date.now() / 1000);
-
-    // Update local config
-    updateConfig((current) => ({
-      ...current,
-      relayMetadata: {
-        relays: newRelays,
-        updatedAt: now,
-      },
-    }));
-
-    // Publish to Nostr if user is logged in
-    if (user) {
-      void publishNIP65RelayList(newRelays);
-    }
-  };
-
-  /**
-   * Clobber guard: never overwrite an existing NIP-65 relay list with our
-   * app defaults. If the local list was never synced from the user's own
-   * kind 10002 (updatedAt === 0 — e.g. the login sync query timed out or
-   * their list lives on relays we didn't reach), verify against Nostr
-   * FIRST. An existing remote list is adopted into local state and the
-   * publish is skipped; only a verified-absent list lets us create one.
-   */
-  const publishNIP65RelayList = async (relayList: Relay[]) => {
-    if (user && config.relayMetadata.updatedAt === 0) {
-      let remote;
-      try {
-        remote = await nostr.query(
-          [{ kinds: [10002], authors: [user.pubkey], limit: 1 }],
-          { signal: AbortSignal.timeout(8000) },
-        );
-      } catch {
-        remote = null; // query failed — unknown whether a list exists
-      }
-
-      if (remote === null) {
-        toast({
-          title: 'Relay list not published',
-          description: 'Could not verify whether you already have a relay list on Nostr. Nothing was overwritten — check your connection and try again.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (remote.length > 0) {
-        const event = remote[0];
-        const fetchedRelays = event.tags
-          .filter(([name]) => name === 'r')
-          .map(([, url, marker]) => ({
-            url,
-            read: !marker || marker === 'read',
-            write: !marker || marker === 'write',
-          }));
-
-        if (fetchedRelays.length > 0) {
-          setRelays(fetchedRelays);
-          updateConfig((current) => ({
-            ...current,
-            relayMetadata: { relays: fetchedRelays, updatedAt: event.created_at },
-          }));
-          toast({
-            title: 'Your existing relay list was loaded',
-            description: 'You already had a NIP-65 relay list on Nostr — it was kept instead of being overwritten. Re-apply your change on top of it.',
-          });
-          return;
-        }
-      }
-      // Verified: no existing list. Publishing creates this user's first one.
-    }
-
-    publishRelayListEvent(relayList);
-  };
-
-  const publishRelayListEvent = (relayList: Relay[]) => {
-    const tags = relayList.map(relay => {
-      if (relay.read && relay.write) {
-        return ['r', relay.url];
-      } else if (relay.read) {
-        return ['r', relay.url, 'read'];
-      } else if (relay.write) {
-        return ['r', relay.url, 'write'];
-      }
-      // If neither read nor write, don't include (shouldn't happen)
-      return null;
-    }).filter((tag): tag is string[] => tag !== null);
-
-    publishEvent(
-      {
-        kind: 10002,
-        content: '',
-        tags,
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Relay list published',
-            description: 'Your relay list has been published to Nostr.',
-          });
-        },
-        onError: (error) => {
-          console.error('Failed to publish relay list:', error);
-          toast({
-            title: 'Failed to publish relay list',
-            description: 'There was an error publishing your relay list to Nostr.',
-            variant: 'destructive',
-          });
-        },
-      }
-    );
+    onSave(relays.map(r => r.url === url ? { ...r, write: !r.write } : r));
   };
 
   const renderRelayUrl = (url: string): string => {
@@ -243,7 +103,7 @@ export function RelayListManager() {
     } catch {
       return url;
     }
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -337,16 +197,175 @@ export function RelayListManager() {
           size="sm"
           className="h-10 shrink-0"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Relay
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
-
-      {!user && (
-        <p className="text-xs text-muted-foreground">
-          Log in to sync your relay list with Nostr
-        </p>
-      )}
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* App Relays — device-local app pool (what the app needs to run)      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The APP relay list — the pool this app uses on this device. Device-local
+ * configuration only: editing it is NEVER published as the user's public
+ * NIP-65 relay list. (That's the point of the split — an app's relay needs
+ * are not the user's relay identity.)
+ */
+export function RelayListManager() {
+  const { config, updateConfig } = useAppContext();
+
+  const save = (newRelays: Relay[]) => {
+    // Only called from event handlers, not during render, so Date.now() is safe.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Math.floor(Date.now() / 1000);
+    updateConfig((current) => ({
+      ...current,
+      relayMetadata: {
+        relays: newRelays,
+        updatedAt: now,
+      },
+    }));
+  };
+
+  return <RelayListEditor relays={config.relayMetadata.relays} onSave={save} />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Your Relays — the user's own NIP-65 list (logged-in users)          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The user's public NIP-65 relay list (kind 10002): synced from Nostr on
+ * login, published on edit. Logged-in users only.
+ *
+ * Clobber guard: if the local copy was never synced from the user's own
+ * kind 10002 (updatedAt === 0), we verify against Nostr BEFORE publishing.
+ * An existing remote list is adopted and the publish is skipped; only a
+ * verified-absent list gets created. A failed verification blocks the
+ * publish — an old Nostr user's relay list is never overwritten by a guess.
+ */
+export function UserRelayListManager() {
+  const { config, updateConfig } = useAppContext();
+  const { user } = useCurrentUser();
+  const { nostr } = useNostr();
+  const { mutate: publishEvent } = useNostrPublish();
+  const { toast } = useToast();
+
+  const [relays, setRelays] = useState<Relay[]>(config.userRelayMetadata.relays);
+
+  // Mirror the authoritative config (e.g. the login sync landing).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRelays(config.userRelayMetadata.relays);
+  }, [config.userRelayMetadata.relays]);
+
+  const publishRelayListEvent = (relayList: Relay[]) => {
+    const tags = relayList.map(relay => {
+      if (relay.read && relay.write) {
+        return ['r', relay.url];
+      } else if (relay.read) {
+        return ['r', relay.url, 'read'];
+      } else if (relay.write) {
+        return ['r', relay.url, 'write'];
+      }
+      return null;
+    }).filter((tag): tag is string[] => tag !== null);
+
+    publishEvent(
+      {
+        kind: 10002,
+        content: '',
+        tags,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Relay list published',
+            description: 'Your relay list has been published to Nostr.',
+          });
+        },
+        onError: (error) => {
+          console.error('Failed to publish relay list:', error);
+          toast({
+            title: 'Failed to publish relay list',
+            description: 'There was an error publishing your relay list to Nostr.',
+            variant: 'destructive',
+          });
+        },
+      }
+    );
+  };
+
+  const publishWithGuard = async (relayList: Relay[]) => {
+    if (user && config.userRelayMetadata.updatedAt === 0) {
+      let remote;
+      try {
+        remote = await nostr.query(
+          [{ kinds: [10002], authors: [user.pubkey], limit: 1 }],
+          { signal: AbortSignal.timeout(8000) },
+        );
+      } catch {
+        remote = null; // query failed — unknown whether a list exists
+      }
+
+      if (remote === null) {
+        toast({
+          title: 'Relay list not published',
+          description: 'Could not verify whether you already have a relay list on Nostr. Nothing was overwritten — check your connection and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (remote.length > 0) {
+        const event = remote[0];
+        const fetchedRelays = event.tags
+          .filter(([name]) => name === 'r')
+          .map(([, url, marker]) => ({
+            url,
+            read: !marker || marker === 'read',
+            write: !marker || marker === 'write',
+          }));
+
+        if (fetchedRelays.length > 0) {
+          setRelays(fetchedRelays);
+          updateConfig((current) => ({
+            ...current,
+            userRelayMetadata: { relays: fetchedRelays, updatedAt: event.created_at },
+          }));
+          toast({
+            title: 'Your existing relay list was loaded',
+            description: 'You already had a NIP-65 relay list on Nostr — it was kept instead of being overwritten. Re-apply your change on top of it.',
+          });
+          return;
+        }
+      }
+      // Verified: no existing list. Publishing creates this user's first one.
+    }
+
+    publishRelayListEvent(relayList);
+  };
+
+  const save = (newRelays: Relay[]) => {
+    // eslint-disable-next-line react-hooks/purity
+    const now = Math.floor(Date.now() / 1000);
+
+    updateConfig((current) => ({
+      ...current,
+      userRelayMetadata: {
+        relays: newRelays,
+        updatedAt: now,
+      },
+    }));
+
+    // Publish to Nostr (logged-in only — this component is only rendered then)
+    if (user) {
+      void publishWithGuard(newRelays);
+    }
+  };
+
+  return <RelayListEditor relays={relays} onSave={save} />;
 }

@@ -21,6 +21,7 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
   // recreating the pool. The refs are written from effects (never during
   // render) to satisfy React's purity rules.
   const relayMetadataRef = useRef(config.relayMetadata);
+  const userRelayMetadataRef = useRef(config.userRelayMetadata);
 
   // Stable ref to the current user's signer for NIP-42 AUTH.
   // The `open()` callback reads from this ref when a relay sends an AUTH
@@ -61,11 +62,18 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
     reqRouter(filters: NostrFilter[]) {
       const routes = new Map<string, NostrFilter[]>();
 
-      // Route to all read relays (ws:// upgraded to wss:// on HTTPS pages —
-      // a ws:// URL would throw at WebSocket construction and kill the query)
-      const readRelays = relayMetadataRef.current.relays
-        .filter(r => r.read)
-        .map(r => toSecureRelayUrl(r.url));
+      // Read pool = APP relays ∪ the logged-in user's own NIP-65 read
+      // relays (their data lives there). App relays are always connected —
+      // they are what the app needs to run; user relays add their identity
+      // data. (ws:// upgraded to wss:// on HTTPS pages — a ws:// URL would
+      // throw at WebSocket construction and kill the query.)
+      const readRelays = new Set<string>();
+      for (const r of relayMetadataRef.current.relays) {
+        if (r.read) readRelays.add(toSecureRelayUrl(r.url));
+      }
+      for (const r of userRelayMetadataRef.current.relays) {
+        if (r.read) readRelays.add(toSecureRelayUrl(r.url));
+      }
 
       for (const url of readRelays) {
         routes.set(url, filters);
@@ -74,12 +82,16 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
       return routes;
     },
     eventRouter(_event: NostrEvent) {
-      // Get write relays from metadata (same ws://→wss:// upgrade as reads)
-      const writeRelays = relayMetadataRef.current.relays
-        .filter(r => r.write)
-        .map(r => toSecureRelayUrl(r.url));
-
-      const allRelays = new Set<string>(writeRelays);
+      // Write pool = APP write relays ∪ the user's NIP-65 write relays —
+      // the app's control-plane data lands on app relays, and the user's
+      // own events (bookmarks, votes, reports…) also land on THEIR relays.
+      const allRelays = new Set<string>();
+      for (const r of relayMetadataRef.current.relays) {
+        if (r.write) allRelays.add(toSecureRelayUrl(r.url));
+      }
+      for (const r of userRelayMetadataRef.current.relays) {
+        if (r.write) allRelays.add(toSecureRelayUrl(r.url));
+      }
 
       return [...allRelays];
     },
@@ -114,11 +126,16 @@ const NostrProvider: React.FC<NostrProviderProps> = (props) => {
     signerRef.current = currentSigner;
   }, [currentSigner]);
 
-  // Invalidate Nostr queries when relay metadata changes.
+  // Invalidate Nostr queries when either relay list changes.
   useEffect(() => {
     relayMetadataRef.current = config.relayMetadata;
     queryClient.invalidateQueries({ queryKey: ['nostr'] });
   }, [config.relayMetadata, queryClient]);
+
+  useEffect(() => {
+    userRelayMetadataRef.current = config.userRelayMetadata;
+    queryClient.invalidateQueries({ queryKey: ['nostr'] });
+  }, [config.userRelayMetadata, queryClient]);
 
   const contextValue = useMemo(() => ({ nostr: pool }), [pool]);
 

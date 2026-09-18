@@ -31,7 +31,7 @@ export function NostrSync() {
           const event = events[0];
 
           // Only update if the event is newer than our stored data
-          if (event.created_at > config.relayMetadata.updatedAt) {
+          if (event.created_at > config.userRelayMetadata.updatedAt) {
             const fetchedRelays = event.tags
               .filter(([name]) => name === 'r')
               .map(([_, url, marker]) => ({
@@ -42,9 +42,10 @@ export function NostrSync() {
 
             if (fetchedRelays.length > 0) {
               console.log('Syncing relay list from Nostr:', fetchedRelays);
+              // The user's OWN NIP-65 list — never the app relay pool.
               updateConfig((current) => ({
                 ...current,
-                relayMetadata: {
+                userRelayMetadata: {
                   relays: fetchedRelays,
                   updatedAt: event.created_at,
                 },
@@ -58,7 +59,7 @@ export function NostrSync() {
     };
 
     syncRelaysFromNostr();
-  }, [user, config.relayMetadata.updatedAt, nostr, updateConfig]);
+  }, [user, config.userRelayMetadata.updatedAt, nostr, updateConfig]);
 
   useEffect(() => {
     if (!user) return;
