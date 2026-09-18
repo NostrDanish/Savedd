@@ -182,18 +182,23 @@ describe('moderation label namespaces', () => {
     sig: 'y'.repeat(128),
   });
 
-  it('buildHideLabel writes ONLY the canonical namespace', () => {
+  it('buildHideLabel writes ONLY the canonical namespace + NIP-32 r target', () => {
     const template = buildHideLabel({ url: 'https://example.com/page' });
     expect(template).not.toBeNull();
     const json = JSON.stringify(template);
     expect(json).toContain('savedd.moderation');
     expect(json).not.toContain('0xsearchstr');
+    expect(template!.tags.some(([n, v]) => n === 'r' && v === 'example.com/page')).toBe(true);
+    expect(template!.tags.some(([n]) => n === 'u')).toBe(false);
   });
 
-  it('parseHiddenLabel reads canonical AND legacy, rejects foreign namespaces', () => {
+  it('parseHiddenLabel reads r + legacy u targets, canonical AND legacy namespaces', () => {
     const trusted = new Set([OWNER]);
-    expect(parseHiddenLabel(labelEvent(MODERATION_NS), trusted)).not.toBeNull();
-    expect(parseHiddenLabel(labelEvent(LEGACY_PROTOCOL.moderation), trusted)).not.toBeNull();
+    // NIP-32-correct r target (current writes):
+    expect(parseHiddenLabel(labelEvent(MODERATION_NS), trusted)?.value).toBe('example.com/page');
+    // Legacy u target (deployed labels):
+    const legacyU = { ...labelEvent(LEGACY_PROTOCOL.moderation), tags: [['L', LEGACY_PROTOCOL.moderation], ['l', 'hidden', LEGACY_PROTOCOL.moderation], ['u', 'example.com/old']] };
+    expect(parseHiddenLabel(legacyU as unknown as NostrEvent, trusted)?.value).toBe('example.com/old');
     expect(parseHiddenLabel(labelEvent('evil.moderation'), trusted)).toBeNull();
     expect(parseHiddenLabel(labelEvent(MODERATION_NS, RANDO), trusted)).toBeNull();
   });

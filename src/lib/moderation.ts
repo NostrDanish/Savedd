@@ -8,8 +8,10 @@
  *
  *   ["L", "savedd.moderation"]            ← canonical namespace
  *   ["l", "hidden", "savedd.moderation"]  ← label
- *   ["u", "<normalized-url>"]             ← target (web result)
+ *   ["r", "<normalized-url>"]             ← target (web result; NIP-32 target tag)
  *   ["e", "<event-id>"]                   ← target (Nostr result)
+ *
+ * (Legacy labels targeted URLs with `u` tags — readers accept both.)
  *
  * Readers (every user of the app) filter their own result lists against
  * labels signed by TRUSTED team keys ONLY (owner + owner-listed team) — the
@@ -138,7 +140,9 @@ export interface HiddenTarget {
   createdAt: number;
 }
 
-/** Parse a kind 1985 "hidden" label. Returns null if invalid or untrusted. */
+/** Parse a kind 1985 "hidden" label. Returns null if invalid or untrusted.
+ *  URL targets read BOTH `r` (NIP-32-correct — written by current code) and
+ *  `u` (legacy SAVEDD/Dsearch labels) tags. */
 export function parseHiddenLabel(event: NostrEvent, trusted: Set<string> = new Set([OWNER_PUBKEY])): HiddenTarget | null {
   if (event.kind !== MODERATION_KIND) return null;
   if (!trusted.has(event.pubkey)) return null; // trust boundary
@@ -147,9 +151,9 @@ export function parseHiddenLabel(event: NostrEvent, trusted: Set<string> = new S
   const isHidden = event.tags.some(([n, v, ns]) => n === 'l' && v === 'hidden' && isModerationNs(ns));
   if (!isHidden) return null;
 
-  const uTag = event.tags.find(([n]) => n === 'u')?.[1];
+  const urlTag = event.tags.find(([n]) => n === 'r')?.[1] ?? event.tags.find(([n]) => n === 'u')?.[1];
   const eTag = event.tags.find(([n]) => n === 'e')?.[1];
-  if (uTag) return { labelEventId: event.id, targetType: 'u', value: uTag, createdAt: event.created_at };
+  if (urlTag) return { labelEventId: event.id, targetType: 'u', value: urlTag, createdAt: event.created_at };
   if (eTag && /^[0-9a-f]{64}$/i.test(eTag)) {
     return { labelEventId: event.id, targetType: 'e', value: eTag.toLowerCase(), createdAt: event.created_at };
   }
@@ -162,8 +166,10 @@ export function buildHideLabel(target: { url?: string; eventId?: string }): {
   content: string;
   tags: string[][];
 } | null {
+  // NIP-32 label targets are e/p/a/r/t — a web URL is an `r` tag. (Legacy
+  // labels used `u`; readers accept both.)
   const targetTag = target.url
-    ? ['u', normalizeIndexUrl(target.url) ?? target.url.trim()]
+    ? ['r', normalizeIndexUrl(target.url) ?? target.url.trim()]
     : target.eventId && /^[0-9a-f]{64}$/i.test(target.eventId)
       ? ['e', target.eventId.toLowerCase()]
       : null;
@@ -176,17 +182,18 @@ export function buildHideLabel(target: { url?: string; eventId?: string }): {
       ['L', MODERATION_NS],
       ['l', 'hidden', MODERATION_NS],
       targetTag,
-      ['alt', `SAVEDD moderation: hidden ${targetTag[0] === 'u' ? targetTag[1] : 'event'}`],
+      ['alt', `SAVEDD moderation: hidden ${targetTag[0] === 'r' ? targetTag[1] : 'event'}`],
     ],
   };
 }
 
-/** Build a NIP-09 deletion request for a label event (un-hide). */
+/** Build a NIP-09 deletion request for a label event (un-hide).
+ *  Includes the `k` tag NIP-09 asks for (kind of the deleted event). */
 export function buildUnhideDelete(labelEventId: string): { kind: number; content: string; tags: string[][] } {
   return {
     kind: 5,
     content: 'Un-hide result',
-    tags: [['e', labelEventId]],
+    tags: [['e', labelEventId], ['k', String(MODERATION_KIND)]],
   };
 }
 

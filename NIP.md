@@ -11,9 +11,9 @@ formats. Current support:
 | NIP-19 | bech32 identifiers | — | ✅ `/npub…`, `/note1…`, `/nevent1…`, `/naddr1…` routes |
 | NIP-23 | Long-form articles | 30023 | ✅ read (Nostr tab + All) |
 | NIP-24 | Extra metadata (`display_name`, `website`, `banner`, `bot`) | 0 | ✅ read (profile pages) |
-| NIP-25 | Reactions (votes) | 7 | ✅ read + write — 👍/👎 on results; anonymous via the device indexing identity by default, or the user's npub when toggled |
+| NIP-25 | Reactions (votes) | 7 | ✅ read + write — 👍/👎 on results; anonymous via the device indexing identity by default, or the user's npub when toggled. Note: URL votes use `r` tags on kind 7 (federation convention predating NIP-25's kind 17 external reactions; shared with Dsearch/0xSearchstr tally readers) |
 | NIP-09 | Deletion | 5 | ✅ write (team retracts its own moderation labels; users retract their own web bookmarks) |
-| NIP-32 | Labeling (`L`/`l`) | —, 1985 | ✅ write (abuse reports self-label `savedd.abuse`; team moderation labels under `savedd.moderation`) + ✅ read (team-signed `hidden` labels filter all users' results). Legacy read: `0xsearchstr.moderation` / `0xsearchstr.abuse` (owner/team-signed only, never written) |
+| NIP-32 | Labeling (`L`/`l`) | —, 1985 | ✅ write (abuse reports self-label `savedd.abuse`; team moderation labels under `savedd.moderation`, URL targets as `r` tags per spec) + ✅ read (team-signed `hidden` labels filter all users' results; legacy `u` URL targets still read). Legacy read: `0xsearchstr.moderation` / `0xsearchstr.abuse` (owner/team-signed only, never written) |
 | NIP-34 | Git collaboration | 30617, 1621, 1618, 1617 | ✅ read — Code tab: repos (link `web`/`clone`), issues, PRs, patches from the read-only ngit/GRASP pool (`GIT_RELAYS`) |
 | NIP-35 | Torrents | 2003 | ✅ read — results link the constructed magnet URI |
 | NIP-36 | Content warnings | any | ✅ `content-warning` events render collapsed until tapped |
@@ -22,6 +22,7 @@ formats. Current support:
 | NIP-56 | Reporting | 1984 | ✅ write (Policy page abuse reports, self-labeled `savedd.abuse`) |
 | NIP-65 | Relay list metadata | 10002 | ✅ read + write (Settings → Your Relays) |
 | NIP-77 | Negentropy sync | — | 📖 documented in SIP-01 §15 (relay-to-relay, nothing client-side) |
+| NIP-98 | HTTP auth | 27235 | ✅ engine-AI admin actions (worker verifies owner signature, `u`/`method`, freshness). Variant: the action payload rides in `content` (the worker's payload), not a `payload` hash tag |
 | NIP-78 | App-specific data | 30078 | ✅ submissions / stakes / term signals (read + write) · legacy cache (read-only, see below) · SAVEDD control plane (see [docs/SAVEDD-NOSTR-PROTOCOL.md](docs/SAVEDD-NOSTR-PROTOCOL.md)): `savedd:admin-roles` + `savedd:mod-roles` (owner-signed), `savedd:affiliate-rules` + `savedd:referral-config` (owner/admin). Legacy read-only: `presearchstr:*-roles` |
 | NIP-92 | Media attachments (`imeta`) | 1 | ✅ read (inline thumbnails in results) |
 | NIP-94 | File metadata | 1063 | ✅ read (file results) |
