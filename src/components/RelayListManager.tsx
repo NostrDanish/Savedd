@@ -9,6 +9,7 @@ import { useAppContext } from '@/hooks/useAppContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { useToast } from '@/hooks/useToast';
+import { useNostr } from '@nostrify/react';
 
 interface Relay {
   url: string;
@@ -19,6 +20,7 @@ interface Relay {
 export function RelayListManager() {
   const { config, updateConfig } = useAppContext();
   const { user } = useCurrentUser();
+  const { nostr } = useNostr();
   const { mutate: publishEvent } = useNostrPublish();
   const { toast } = useToast();
 
@@ -126,11 +128,69 @@ export function RelayListManager() {
 
     // Publish to Nostr if user is logged in
     if (user) {
-      publishNIP65RelayList(newRelays);
+      void publishNIP65RelayList(newRelays);
     }
   };
 
-  const publishNIP65RelayList = (relayList: Relay[]) => {
+  /**
+   * Clobber guard: never overwrite an existing NIP-65 relay list with our
+   * app defaults. If the local list was never synced from the user's own
+   * kind 10002 (updatedAt === 0 — e.g. the login sync query timed out or
+   * their list lives on relays we didn't reach), verify against Nostr
+   * FIRST. An existing remote list is adopted into local state and the
+   * publish is skipped; only a verified-absent list lets us create one.
+   */
+  const publishNIP65RelayList = async (relayList: Relay[]) => {
+    if (user && config.relayMetadata.updatedAt === 0) {
+      let remote;
+      try {
+        remote = await nostr.query(
+          [{ kinds: [10002], authors: [user.pubkey], limit: 1 }],
+          { signal: AbortSignal.timeout(8000) },
+        );
+      } catch {
+        remote = null; // query failed — unknown whether a list exists
+      }
+
+      if (remote === null) {
+        toast({
+          title: 'Relay list not published',
+          description: 'Could not verify whether you already have a relay list on Nostr. Nothing was overwritten — check your connection and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (remote.length > 0) {
+        const event = remote[0];
+        const fetchedRelays = event.tags
+          .filter(([name]) => name === 'r')
+          .map(([, url, marker]) => ({
+            url,
+            read: !marker || marker === 'read',
+            write: !marker || marker === 'write',
+          }));
+
+        if (fetchedRelays.length > 0) {
+          setRelays(fetchedRelays);
+          updateConfig((current) => ({
+            ...current,
+            relayMetadata: { relays: fetchedRelays, updatedAt: event.created_at },
+          }));
+          toast({
+            title: 'Your existing relay list was loaded',
+            description: 'You already had a NIP-65 relay list on Nostr — it was kept instead of being overwritten. Re-apply your change on top of it.',
+          });
+          return;
+        }
+      }
+      // Verified: no existing list. Publishing creates this user's first one.
+    }
+
+    publishRelayListEvent(relayList);
+  };
+
+  const publishRelayListEvent = (relayList: Relay[]) => {
     const tags = relayList.map(relay => {
       if (relay.read && relay.write) {
         return ['r', relay.url];

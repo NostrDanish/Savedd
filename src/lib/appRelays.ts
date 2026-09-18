@@ -13,6 +13,11 @@ export const APP_RELAYS: RelayMetadata = {
     { url: 'wss://relay.nostr.band/', read: true, write: false },
     { url: 'wss://relay.primal.net/', read: false, write: true },
     { url: 'wss://relay.damus.io/', read: false, write: true },
+    // SAVEDD's own SIP relay — app-specific data (control plane, bookmarks,
+    // referrals, moderation) lands here too.
+    { url: 'wss://savedd-sip-relay.savedd-sip-relay.workers.dev/', read: true, write: true },
+    // Ditto/OpenSearch index relay — carries the SIP-01 index + NIP-50.
+    { url: 'wss://relay-na1.metanomalist.com/', read: true, write: true },
   ],
   updatedAt: 0,
 };
@@ -31,6 +36,8 @@ export const APP_RELAYS: RelayMetadata = {
 export const INDEX_RELAYS = [
   'wss://relay-na1.metanomalist.com/',
   'wss://relay.ditto.pub/',
+  // SAVEDD's own SIP-01 index relay (Cloudflare Worker; NIP-50 native).
+  'wss://savedd-sip-relay.savedd-sip-relay.workers.dev/',
   // The UNCAGED SIP relay cluster — serverless SIP-01 index relays
   // (Cloudflare Workers + D1; NIP-50 + NIP-45 + NIP-77, kind 39697 native).
   'wss://test-sip-relay.sip-01test.workers.dev/',
@@ -97,6 +104,8 @@ export const WIKI_RELAYS = [
 export const SEARCH_RELAYS = [
   'wss://relay.ditto.pub/',
   'wss://relay-na1.metanomalist.com/',
+  // SAVEDD's own SIP relay answers NIP-50 over the SIP-01 document index.
+  'wss://savedd-sip-relay.savedd-sip-relay.workers.dev/',
   // The UNCAGED SIP relay cluster answers NIP-50 over the SIP-01 document
   // index directly (web operators: site:, lang:, after:, …).
   'wss://test-sip-relay.sip-01test.workers.dev/',
