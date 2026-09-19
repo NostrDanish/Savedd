@@ -42,6 +42,9 @@ function bundleWorker(): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
+  // GitHub Pages serves project sites at /<repo-name>/, so the deploy
+  // workflow passes VITE_BASE=/repo-name/. Locally it stays "/".
+  base: process.env.VITE_BASE ?? "/",
   server: {
     host: "::",
     port: 8080,
