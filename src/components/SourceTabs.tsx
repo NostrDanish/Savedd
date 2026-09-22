@@ -1,9 +1,9 @@
 import { cn } from '@/lib/utils';
-import { Layers, Zap, Globe, Shield, Network, BookOpen, Newspaper, Code, Database } from 'lucide-react';
+import { Layers, Zap, Globe, Shield, Network, BookOpen, Newspaper, Code, Database, Map, Video, ExternalLink } from 'lucide-react';
 import type { SearchSource } from '@/lib/providers/types';
 import { useAppContext } from '@/hooks/useAppContext';
 
-export type SourceTabValue = SearchSource | 'all' | 'index' | 'i2p';
+export type SourceTabValue = SearchSource | 'all' | 'index' | 'i2p' | 'maps' | 'videos' | 'news-ext';
 
 interface SourceTabsProps {
   value: SourceTabValue;
@@ -19,6 +19,12 @@ export interface SourceTabMeta {
   icon: React.ReactNode;
   color: string;
   activeColor: string;
+  /**
+   * When set, the tab is an external shortcut: clicking it opens this URL
+   * (built from the current query) in a new browser tab instead of
+   * filtering results. External tabs never become the active source.
+   */
+  externalUrl?: (query: string) => string;
 }
 
 /** All known tabs — display metadata. Order/visibility come from tabConfig. */
@@ -73,6 +79,30 @@ export const ALL_SOURCE_TABS: SourceTabMeta[] = [
     activeColor: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30',
   },
   {
+    id: 'maps',
+    label: 'Maps',
+    icon: <Map className="w-3.5 h-3.5" />,
+    color: 'text-muted-foreground/70 hover:text-foreground',
+    activeColor: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30',
+    externalUrl: (q) => q ? `https://www.google.com/maps/search/${encodeURIComponent(q)}` : 'https://www.google.com/maps',
+  },
+  {
+    id: 'videos',
+    label: 'Videos',
+    icon: <Video className="w-3.5 h-3.5" />,
+    color: 'text-muted-foreground/70 hover:text-foreground',
+    activeColor: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30',
+    externalUrl: (q) => q ? `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` : 'https://www.youtube.com',
+  },
+  {
+    id: 'news-ext',
+    label: 'News ↗',
+    icon: <Newspaper className="w-3.5 h-3.5" />,
+    color: 'text-muted-foreground/70 hover:text-foreground',
+    activeColor: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30',
+    externalUrl: (q) => `https://freespoke.com/search/news?q=${encodeURIComponent(q)}`,
+  },
+  {
     id: 'tor',
     label: 'Tor',
     icon: <Shield className="w-3.5 h-3.5" />,
@@ -89,6 +119,16 @@ export const ALL_SOURCE_TABS: SourceTabMeta[] = [
 ];
 
 const TAB_BY_ID = new Map(ALL_SOURCE_TABS.map((t) => [t.id, t]));
+
+/** True for tabs that open an external engine in a new tab (Maps, Videos, News ↗). */
+export function isExternalTab(id: string): boolean {
+  return TAB_BY_ID.get(id as SourceTabValue)?.externalUrl !== undefined;
+}
+
+/** Build the external destination URL for a tab + query (site homepage when empty). */
+export function getExternalTabUrl(id: SourceTabValue, query: string): string | undefined {
+  return TAB_BY_ID.get(id)?.externalUrl?.(query.trim());
+}
 
 /**
  * Out-of-the-box tab configuration: Web first (community index + clearnet
@@ -137,13 +177,15 @@ export function SourceTabs({ value, onChange, className, counts }: SourceTabsPro
     // the tab order and announces its pressed state.
     <div className={cn('flex items-center gap-1.5 flex-wrap', className)} role="group" aria-label="Search source">
       {sources.map((source) => {
-        const isActive = value === source.id;
+        const isExternal = source.externalUrl !== undefined;
+        const isActive = !isExternal && value === source.id;
         const count = counts?.[source.id];
         return (
           <button
             key={source.id}
             type="button"
-            aria-pressed={isActive}
+            aria-pressed={isExternal ? undefined : isActive}
+            title={isExternal ? `${source.label.replace(' ↗', '')} — opens in a new tab` : undefined}
             onClick={() => onChange(source.id)}
             className={cn(
               'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border border-transparent transition-all duration-150',
@@ -153,6 +195,7 @@ export function SourceTabs({ value, onChange, className, counts }: SourceTabsPro
           >
             {source.icon}
             {source.label}
+            {isExternal && <ExternalLink className="w-3 h-3 opacity-60" />}
             {count !== undefined && count > 0 && (
               <span className={cn(
                 'text-[10px] font-mono ml-0.5 opacity-70',

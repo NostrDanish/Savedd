@@ -6,7 +6,7 @@ import { Search, Network, ExternalLink, Gem, ChevronLeft, ChevronRight } from 'l
 import { Layout } from '@/components/Layout';
 import { LogoMark } from '@/components/LogoMark';
 import { SearchBar } from '@/components/SearchBar';
-import { SourceTabs, type SourceTabValue } from '@/components/SourceTabs';
+import { SourceTabs, type SourceTabValue, ALL_SOURCE_TABS, isExternalTab, getExternalTabUrl } from '@/components/SourceTabs';
 import { UnifiedResultCard } from '@/components/UnifiedResultCard';
 import { StakeResultCard } from '@/components/StakeResultCard';
 import { VoteTalliesProvider } from '@/components/VoteButtons';
@@ -27,10 +27,12 @@ import { useInstantAnswer } from '@/hooks/useInstantAnswer';
 import { useAIAnswer } from '@/hooks/useAIAnswer';
 import { useSearchHotkeys } from '@/hooks/useSearchHotkeys';
 import { useAppContext } from '@/hooks/useAppContext';
-import { ALL_SOURCE_TABS } from '@/components/SourceTabs';
 import type { SearchSource } from '@/lib/providers/types';
 
-const KNOWN_TAB_IDS = new Set(ALL_SOURCE_TABS.map((t) => t.id as string));
+// Tabs that can actually be the ACTIVE source — external shortcut tabs
+// (Maps / Videos / News ↗) open in a new browser tab instead, so they can
+// never be selected via deep link or stored default.
+const KNOWN_TAB_IDS = new Set(ALL_SOURCE_TABS.filter((t) => !isExternalTab(t.id)).map((t) => t.id as string));
 
 /** Results per results page. All results stream in up front (providers run
  *  in parallel), so pages render instantly — later pages fill in as
@@ -44,7 +46,8 @@ const Index = () => {
   // URL param wins; otherwise the user's configured default tab (Web out of
   // the box). Unknown/garbage stored values fall back to 'web'.
   const storedDefault = config.tabConfig.defaultTab;
-  const initialSource = (searchParams.get('source') as SourceTabValue)
+  const paramSource = searchParams.get('source') || '';
+  const initialSource = (KNOWN_TAB_IDS.has(paramSource) ? (paramSource as SourceTabValue) : null)
     || (KNOWN_TAB_IDS.has(storedDefault) ? (storedDefault as SourceTabValue) : 'web');
 
   const [query, setQuery] = useState(initialQuery);
@@ -170,6 +173,14 @@ const Index = () => {
   }, [source, setSearchParams]);
 
   const handleSourceChange = useCallback((newSource: SourceTabValue) => {
+    // External shortcut tabs (Maps / Videos / News ↗) don't filter results —
+    // they open the matching engine in a new browser tab with the current
+    // query and leave the active source untouched.
+    if (isExternalTab(newSource)) {
+      const url = getExternalTabUrl(newSource, activeQuery || query);
+      if (url) window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
     setSource(newSource);
     if (activeQuery) {
       setSearchParams((prev) => {
@@ -177,7 +188,7 @@ const Index = () => {
         return prev;
       });
     }
-  }, [activeQuery, setSearchParams]);
+  }, [activeQuery, query, setSearchParams]);
 
   // ─── Hero mode (no search yet) ───
   if (!hasSearched) {
@@ -409,6 +420,7 @@ const Index = () => {
                   {suggestions.slice(0, 5).map((suggestion) => (
                     <button
                       key={suggestion}
+                      type="button"
                       onClick={() => {
                         setQuery(suggestion);
                         handleSubmit(suggestion);
