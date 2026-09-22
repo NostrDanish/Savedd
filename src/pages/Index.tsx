@@ -420,7 +420,6 @@ const Index = () => {
                   {suggestions.slice(0, 5).map((suggestion) => (
                     <button
                       key={suggestion}
-                      type="button"
                       onClick={() => {
                         setQuery(suggestion);
                         handleSubmit(suggestion);
