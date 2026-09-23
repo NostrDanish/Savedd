@@ -178,7 +178,7 @@ function NostrCard({ result, className }: { result: SearchResult; className?: st
 
         {/* Title (for articles, code snippets, torrents, wiki pages) */}
         {['Article', 'Code', 'Torrent', 'Wiki'].includes(result.kind ?? '') && result.title !== result.snippet && (
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1 line-clamp-2">
+          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1.5 line-clamp-2">
             {result.title}
           </h3>
         )}

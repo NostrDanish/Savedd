@@ -13,7 +13,7 @@ import {
   CheckCircle2, XCircle, CircleDashed, ExternalLink, ShieldCheck, Check,
   ShieldAlert, ShieldX, Shield, Eye, EyeOff, Wifi, Zap, Fingerprint, Copy, Download, Undo2,
   ChevronUp, ChevronDown, Star, Power, ThumbsUp, Database, Sparkles, Lock, Code, BookOpen,
-  Languages, X,
+  Languages, X, Map as MapIcon,
 } from 'lucide-react';
 
 import { Layout } from '@/components/Layout';
@@ -890,6 +890,39 @@ function SearchTabsSection() {
             </div>
           );
         })}
+      </div>
+
+      {/* Maps provider — which service the Maps tab opens in a new tab */}
+      <div className="mt-4 flex items-center gap-2 flex-wrap rounded-lg border border-border/60 bg-card px-3 py-2.5">
+        <span className="text-sm font-medium inline-flex items-center gap-1.5">
+          <MapIcon className="w-3.5 h-3.5 text-muted-foreground" />
+          Maps tab opens with
+        </span>
+        <div className="flex gap-1.5 ml-auto" role="radiogroup" aria-label="Maps provider">
+          {([
+            { value: 'google' as const, label: 'Google Maps' },
+            { value: 'osm' as const, label: 'OpenStreetMap' },
+          ]).map((opt) => {
+            const active = (config.mapsProvider ?? 'google') === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => updateConfig(() => ({ mapsProvider: opt.value }))}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg border text-sm font-medium transition-colors',
+                  active
+                    ? 'border-primary/40 bg-primary/10 text-primary'
+                    : 'border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent',
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed">
