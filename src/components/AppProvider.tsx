@@ -48,6 +48,7 @@ const AppConfigSchema = z.object({
   privacyMode: z.boolean(),
   autoIndex: z.boolean(),
   tabConfig: TabConfigSchema,
+  mapsProvider: z.enum(['google', 'osm']).optional(),
   voteWithIdentity: z.boolean(),
   disabledProviders: z.array(z.string()),
   // Tolerant: normalize + drop invalid codes from stored configs rather

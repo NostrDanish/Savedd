@@ -143,8 +143,9 @@ function NostrCard({ result, className }: { result: SearchResult; className?: st
   })();
 
   // Internal links (/<nip19>) use the router; external protocol links
-  // (magnet:, https:) use a plain anchor. Result URLs are hostile data —
-  // sanitize before they can become a clickable href (audit P0).
+  // (magnet:, https:) use a plain anchor and open in a new tab. Result
+  // URLs are hostile data — sanitize before they become a clickable href
+  // (audit P0).
   const isInternal = result.url.startsWith('/');
   const safeUrl = isInternal ? '' : sanitizeResultUrl(result.url);
 
@@ -177,7 +178,7 @@ function NostrCard({ result, className }: { result: SearchResult; className?: st
 
         {/* Title (for articles, code snippets, torrents, wiki pages) */}
         {['Article', 'Code', 'Torrent', 'Wiki'].includes(result.kind ?? '') && result.title !== result.snippet && (
-          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1.5 line-clamp-2">
+          <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-1 line-clamp-2">
             {result.title}
           </h3>
         )}
@@ -241,7 +242,7 @@ function NostrCard({ result, className }: { result: SearchResult; className?: st
       {isInternal ? (
         <Link to={result.url} className={cn('block group', className)}>{card}</Link>
       ) : safeUrl ? (
-        <a href={safeUrl} className={cn('block group', className)}>{card}</a>
+        <a href={safeUrl} target="_blank" rel="noopener noreferrer" className={cn('block group', className)}>{card}</a>
       ) : (
         // Unsafe scheme (javascript:, data:, …) — render without a link.
         <div className={className}>{card}</div>

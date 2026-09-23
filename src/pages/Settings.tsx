@@ -33,7 +33,7 @@ import {
 import { useToast } from '@/hooks/useToast';
 import { useTheme } from '@/hooks/useTheme';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { ALL_SOURCE_TABS, DEFAULT_TAB_CONFIG } from '@/components/SourceTabs';
+import { ALL_SOURCE_TABS, DEFAULT_TAB_CONFIG, isExternalTab } from '@/components/SourceTabs';
 import { useAppContext } from '@/hooks/useAppContext';
 import { useSearxngInstances } from '@/hooks/useSearxngInstances';
 import { useSearchRelayPool, useIndexRelayPool, useGitRelayPool, useWikiRelayPool } from '@/hooks/useSearchRelayPool';
@@ -816,6 +816,9 @@ function SearchTabsSection() {
           if (!meta) return null;
           const isHidden = hidden.includes(id);
           const isDefault = defaultTab === id;
+          // External tabs (Maps / Videos / News ↗) open a new browser tab —
+          // they can't be the default source.
+          const isExternal = isExternalTab(id);
 
           return (
             <div
@@ -848,17 +851,27 @@ function SearchTabsSection() {
               {/* Tab identity */}
               <span className="text-muted-foreground shrink-0">{meta.icon}</span>
               <span className="text-sm font-medium flex-1 min-w-0 truncate">{meta.label}</span>
+              {isExternal && (
+                <span title="Opens in a new browser tab">
+                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                </span>
+              )}
 
               {/* Default marker */}
               <button
-                onClick={() => !isHidden && setTabConfig({ defaultTab: id })}
-                disabled={isHidden}
-                title={isDefault ? 'Default tab' : 'Make this the default tab'}
+                onClick={() => !isHidden && !isExternal && setTabConfig({ defaultTab: id })}
+                disabled={isHidden || isExternal}
+                title={
+                  isExternal ? 'External tabs open in a new browser tab — they can\u2019t be the default'
+                    : isDefault ? 'Default tab'
+                    : 'Make this the default tab'
+                }
                 aria-label={isDefault ? `${meta.label} is the default tab` : `Make ${meta.label} the default tab`}
                 className={cn(
                   'shrink-0 transition-colors',
                   isDefault ? 'text-primary' : 'text-muted-foreground/40 hover:text-foreground',
-                  isHidden && 'cursor-not-allowed',
+                  (isHidden || isExternal) && 'cursor-not-allowed',
+                  isExternal && 'opacity-30 hover:text-muted-foreground/40',
                 )}
               >
                 <Star className={cn('w-4 h-4', isDefault && 'fill-primary')} />
@@ -881,7 +894,9 @@ function SearchTabsSection() {
 
       <p className="text-[11px] text-muted-foreground/70 mt-3 leading-relaxed">
         The starred tab opens on fresh visits. Deep links still work for hidden tabs
-        (e.g. <code className="font-mono">/?source=tor&q=…</code>).
+        (e.g. <code className="font-mono">/?source=tor&q=…</code>). Maps, Videos and News ↗ are
+        external shortcuts — clicking them opens Google Maps, YouTube or Freespoke News in a
+        new browser tab with your query.
       </p>
     </section>
   );
