@@ -6,7 +6,7 @@ import { Search, Network, ExternalLink, Gem, ChevronLeft, ChevronRight } from 'l
 import { Layout } from '@/components/Layout';
 import { LogoMark } from '@/components/LogoMark';
 import { SearchBar } from '@/components/SearchBar';
-import { SourceTabs, type SourceTabValue, ALL_SOURCE_TABS, isExternalTab, getExternalTabUrl } from '@/components/SourceTabs';
+import { SourceTabs, type SourceTabValue, ALL_SOURCE_TABS, isExternalTab, getExternalTabUrl, getMapsUrl } from '@/components/SourceTabs';
 import { UnifiedResultCard } from '@/components/UnifiedResultCard';
 import { StakeResultCard } from '@/components/StakeResultCard';
 import { VoteTalliesProvider } from '@/components/VoteButtons';
@@ -177,7 +177,10 @@ const Index = () => {
     // they open the matching engine in a new browser tab with the current
     // query and leave the active source untouched.
     if (isExternalTab(newSource)) {
-      const url = getExternalTabUrl(newSource, activeQuery || query);
+      // Maps honors the provider chosen in Settings (Google Maps / OSM).
+      const url = newSource === 'maps'
+        ? getMapsUrl(activeQuery || query, config.mapsProvider ?? 'google')
+        : getExternalTabUrl(newSource, activeQuery || query);
       if (url) window.open(url, '_blank', 'noopener,noreferrer');
       return;
     }
@@ -188,7 +191,7 @@ const Index = () => {
         return prev;
       });
     }
-  }, [activeQuery, query, setSearchParams]);
+  }, [activeQuery, query, config.mapsProvider, setSearchParams]);
 
   // ─── Hero mode (no search yet) ───
   if (!hasSearched) {
