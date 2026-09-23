@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
-import { Layers, Zap, Globe, Shield, Network, BookOpen, Newspaper, Code, Database, Map, Video, ExternalLink } from 'lucide-react';
+import { Layers, Zap, Globe, Shield, Network, BookOpen, Newspaper, Code, Database, Map as MapIcon, Video as VideoIcon, ExternalLink } from 'lucide-react';
 import type { SearchSource } from '@/lib/providers/types';
 import { useAppContext } from '@/hooks/useAppContext';
+import type { MapsProvider } from '@/contexts/AppContext';
 
 export type SourceTabValue = SearchSource | 'all' | 'index' | 'i2p' | 'maps' | 'videos' | 'news-ext';
 
@@ -81,15 +82,15 @@ export const ALL_SOURCE_TABS: SourceTabMeta[] = [
   {
     id: 'maps',
     label: 'Maps',
-    icon: <Map className="w-3.5 h-3.5" />,
+    icon: <MapIcon className="w-3.5 h-3.5" />,
     color: 'text-muted-foreground/70 hover:text-foreground',
     activeColor: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30',
-    externalUrl: (q) => q ? `https://www.google.com/maps/search/${encodeURIComponent(q)}` : 'https://www.google.com/maps',
+    externalUrl: (q) => getMapsUrl(q, 'google'),
   },
   {
     id: 'videos',
     label: 'Videos',
-    icon: <Video className="w-3.5 h-3.5" />,
+    icon: <VideoIcon className="w-3.5 h-3.5" />,
     color: 'text-muted-foreground/70 hover:text-foreground',
     activeColor: 'text-[var(--primary)] bg-[var(--primary)]/10 border-[var(--primary)]/30',
     externalUrl: (q) => q ? `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}` : 'https://www.youtube.com',
@@ -128,6 +129,18 @@ export function isExternalTab(id: string): boolean {
 /** Build the external destination URL for a tab + query (site homepage when empty). */
 export function getExternalTabUrl(id: SourceTabValue, query: string): string | undefined {
   return TAB_BY_ID.get(id)?.externalUrl?.(query.trim());
+}
+
+/**
+ * Maps tab destination — provider chosen in Settings → Search Tabs
+ * (Google Maps or OpenStreetMap). Homepage when the query is empty.
+ */
+export function getMapsUrl(query: string, provider: MapsProvider = 'google'): string {
+  const q = query.trim();
+  if (provider === 'osm') {
+    return q ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(q)}` : 'https://www.openstreetmap.org';
+  }
+  return q ? `https://www.google.com/maps/search/${encodeURIComponent(q)}` : 'https://www.google.com/maps';
 }
 
 /**

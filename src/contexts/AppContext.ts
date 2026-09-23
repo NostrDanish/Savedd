@@ -5,6 +5,9 @@ export type Theme = "dark" | "light" | "hacker";
 /** User-selectable accent color (Settings → Appearance). Amber = brand default. */
 export type AccentColor = "amber" | "blue" | "red" | "green" | "violet" | "cyan";
 
+/** Maps provider for the Maps tab (Settings → Search Tabs). Google Maps by default. */
+export type MapsProvider = "google" | "osm";
+
 export interface RelayMetadata {
   /** List of relays with read/write permissions */
   relays: { url: string; read: boolean; write: boolean }[];
@@ -73,6 +76,11 @@ export interface AppConfig {
    * what order, and which one a fresh visit starts on.
    */
   tabConfig: TabConfig;
+  /**
+   * Maps provider behind the Maps tab — 'google' (Google Maps) or 'osm'
+   * (OpenStreetMap). Undefined = Google Maps.
+   */
+  mapsProvider?: MapsProvider;
   /**
    * Vote identity — when false (default), 👍/👎 votes are anonymous: signed
    * by this device's built-in SIP-01 indexing identity. When true, votes are
